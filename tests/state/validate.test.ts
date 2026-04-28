@@ -121,4 +121,87 @@ describe("validateStatus", () => {
       ],
     });
   });
+
+  it.each([
+    {
+      name: "interface kind",
+      value: {
+        ...validStatus,
+        interfaces: [{ ...validStatus.interfaces[0], kind: "socket" }],
+      },
+      path: "interfaces[0].kind",
+      message: "Expected one of: http, event, cli, db, external",
+    },
+    {
+      name: "interface test status",
+      value: {
+        ...validStatus,
+        interfaces: [{ ...validStatus.interfaces[0], testStatus: "skipped" }],
+      },
+      path: "interfaces[0].testStatus",
+      message: "Expected one of: none, partial, passing, failing, unknown",
+    },
+    {
+      name: "flow status",
+      value: {
+        ...validStatus,
+        flows: [{ ...validStatus.flows[0], status: "done" }],
+      },
+      path: "flows[0].status",
+      message: "Expected one of: not_started, in_progress, complete, blocked, unknown",
+    },
+    {
+      name: "risk severity",
+      value: {
+        ...validStatus,
+        risks: [
+          {
+            id: "stale-beta-risk",
+            title: "Stale beta risk",
+            severity: "critical",
+            status: "open",
+            affectedIds: ["api-keys"],
+            evidenceIds: ["api-key-service"],
+          },
+        ],
+      },
+      path: "risks[0].severity",
+      message: "Expected one of: info, warning, error",
+    },
+    {
+      name: "evidence kind",
+      value: {
+        ...validStatus,
+        evidence: [{ ...validStatus.evidence[0], kind: "screenshot" }],
+      },
+      path: "evidence[0].kind",
+      message: "Expected one of: code, test, doc, commit, scan, manual",
+    },
+    {
+      name: "scan finding kind",
+      value: {
+        ...validStatus,
+        scanFindings: [
+          {
+            id: "finding-1",
+            severity: "warning",
+            kind: "unknown_gap",
+            title: "Unknown gap",
+            detail: "Unknown gap detail",
+            affectedIds: ["api-keys"],
+            proposedAction: "Review the status entry",
+            evidenceIds: ["api-key-service"],
+          },
+        ],
+      },
+      path: "scanFindings[0].kind",
+      message:
+        "Expected one of: missing_in_status, missing_in_code, test_mismatch, progress_mismatch, scan_error",
+    },
+  ])("rejects invalid $name", ({ value, path, message }) => {
+    expect(validateStatus(value)).toEqual({
+      ok: false,
+      errors: [{ path, message }],
+    });
+  });
 });

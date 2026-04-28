@@ -10,7 +10,19 @@ export type ValidationResult =
   | { ok: false; errors: ValidationError[] };
 
 const workStatuses = new Set(["not_started", "in_progress", "complete", "blocked", "unknown"]);
+const testStatuses = new Set(["none", "partial", "passing", "failing", "unknown"]);
 const moduleKinds = new Set(["frontend", "backend", "worker", "database", "external", "tooling", "unknown"]);
+const interfaceKinds = new Set(["http", "event", "cli", "db", "external"]);
+const evidenceKinds = new Set(["code", "test", "doc", "commit", "scan", "manual"]);
+const findingSeverities = new Set(["info", "warning", "error"]);
+const riskStatuses = new Set(["open", "mitigated", "accepted"]);
+const scanFindingKinds = new Set([
+  "missing_in_status",
+  "missing_in_code",
+  "test_mismatch",
+  "progress_mismatch",
+  "scan_error",
+]);
 
 export function validateStatus(value: unknown): ValidationResult {
   const errors: ValidationError[] = [];
@@ -57,20 +69,52 @@ export function validateStatus(value: unknown): ValidationResult {
   validateArray(status.interfaces, "interfaces", errors, (iface, path) => {
     requireString(iface.id, `${path}.id`, errors);
     requireString(iface.name, `${path}.name`, errors);
-    requireString(iface.kind, `${path}.kind`, errors);
+    requireEnum(iface.kind, interfaceKinds, `${path}.kind`, errors);
+    requireOptionalString(iface.method, `${path}.method`, errors);
+    requireOptionalString(iface.path, `${path}.path`, errors);
     requireString(iface.purpose, `${path}.purpose`, errors);
     requireStringArray(iface.callerIds, `${path}.callerIds`, errors);
     requireStringArray(iface.calleeIds, `${path}.calleeIds`, errors);
     requireStringArray(iface.featureIds, `${path}.featureIds`, errors);
-    requireString(iface.testStatus, `${path}.testStatus`, errors);
+    requireEnum(iface.testStatus, testStatuses, `${path}.testStatus`, errors);
     requireStringArray(iface.evidenceIds, `${path}.evidenceIds`, errors);
   });
 
-  for (const key of ["flows", "risks", "evidence", "scanFindings"] as const) {
-    if (!Array.isArray(status[key])) {
-      errors.push({ path: key, message: "Expected array" });
-    }
-  }
+  validateArray(status.flows, "flows", errors, (flow, path) => {
+    requireString(flow.id, `${path}.id`, errors);
+    requireString(flow.name, `${path}.name`, errors);
+    requireString(flow.entry, `${path}.entry`, errors);
+    requireStringArray(flow.steps, `${path}.steps`, errors);
+    requireStringArray(flow.interfaceIds, `${path}.interfaceIds`, errors);
+    requireEnum(flow.status, workStatuses, `${path}.status`, errors);
+  });
+
+  validateArray(status.risks, "risks", errors, (risk, path) => {
+    requireString(risk.id, `${path}.id`, errors);
+    requireString(risk.title, `${path}.title`, errors);
+    requireEnum(risk.severity, findingSeverities, `${path}.severity`, errors);
+    requireEnum(risk.status, riskStatuses, `${path}.status`, errors);
+    requireStringArray(risk.affectedIds, `${path}.affectedIds`, errors);
+    requireStringArray(risk.evidenceIds, `${path}.evidenceIds`, errors);
+  });
+
+  validateArray(status.evidence, "evidence", errors, (evidence, path) => {
+    requireString(evidence.id, `${path}.id`, errors);
+    requireEnum(evidence.kind, evidenceKinds, `${path}.kind`, errors);
+    requireString(evidence.path, `${path}.path`, errors);
+    requireString(evidence.note, `${path}.note`, errors);
+  });
+
+  validateArray(status.scanFindings, "scanFindings", errors, (finding, path) => {
+    requireString(finding.id, `${path}.id`, errors);
+    requireEnum(finding.severity, findingSeverities, `${path}.severity`, errors);
+    requireEnum(finding.kind, scanFindingKinds, `${path}.kind`, errors);
+    requireString(finding.title, `${path}.title`, errors);
+    requireString(finding.detail, `${path}.detail`, errors);
+    requireStringArray(finding.affectedIds, `${path}.affectedIds`, errors);
+    requireString(finding.proposedAction, `${path}.proposedAction`, errors);
+    requireStringArray(finding.evidenceIds, `${path}.evidenceIds`, errors);
+  });
 
   return errors.length === 0 ? { ok: true, errors: [] } : { ok: false, errors };
 }
@@ -102,6 +146,12 @@ function validateArray(
 function requireString(value: unknown, path: string, errors: ValidationError[]): void {
   if (typeof value !== "string" || value.length === 0) {
     errors.push({ path, message: "Expected non-empty string" });
+  }
+}
+
+function requireOptionalString(value: unknown, path: string, errors: ValidationError[]): void {
+  if (value !== undefined && typeof value !== "string") {
+    errors.push({ path, message: "Expected string" });
   }
 }
 
