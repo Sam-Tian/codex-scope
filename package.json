@@ -19,12 +19,21 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prepack": "npm run build"
   },
   "devDependencies": {
     "@types/node": "^20.12.12",
     "tsx": "^4.19.3",
     "typescript": "^5.6.3",
     "vitest": "^2.1.9"
-  }
+  },
+  "files": [
+    "bin/",
+    "dist/src/",
+    "skills/",
+    ".codex-plugin/",
+    "docs/usage.md",
+    "docs/usage.zh-CN.md"
+  ]
 }
