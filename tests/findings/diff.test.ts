@@ -73,4 +73,63 @@ describe("createScanFindings", () => {
       ]),
     );
   });
+
+  it("ignores confirmed interfaces that are outside the route scanner scope", () => {
+    const cliOnlyStatus: ArchitectureStatus = {
+      ...status,
+      interfaces: [
+        {
+          id: "cli:refresh",
+          name: "Refresh CLI",
+          kind: "cli",
+          purpose: "Refresh report from the command line",
+          callerIds: [],
+          calleeIds: [],
+          featureIds: [],
+          testStatus: "unknown",
+          evidenceIds: [],
+        },
+      ],
+    };
+
+    expect(createScanFindings(cliOnlyStatus, { ...scan, interfaces: [] })).toEqual([]);
+  });
+
+  it("matches status and scan methods case-insensitively", () => {
+    const lowerCaseStatus: ArchitectureStatus = {
+      ...status,
+      interfaces: [
+        {
+          ...status.interfaces[0],
+          method: "get",
+        },
+      ],
+    };
+
+    const nextScan: ScanResult = {
+      ...scan,
+      interfaces: [
+        { id: "GET:/v1/known", method: "GET", path: "/v1/known", sourcePath: "src/routes.ts", confidence: "medium" },
+      ],
+    };
+
+    expect(createScanFindings(lowerCaseStatus, nextScan)).toEqual([]);
+  });
+
+  it("reports scanner errors without changing confirmed state", () => {
+    expect(
+      createScanFindings(status, {
+        ...scan,
+        interfaces: scan.interfaces.slice(0, 1),
+        errors: [{ source: "scanRepository", message: "permission denied" }],
+      }),
+    ).toEqual([
+      expect.objectContaining({
+        kind: "scan_error",
+        severity: "error",
+        title: "Scanner error: scanRepository",
+        detail: "permission denied",
+      }),
+    ]);
+  });
 });

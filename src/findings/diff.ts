@@ -1,9 +1,11 @@
 import type { ScanResult } from "../scan/types.js";
-import type { ArchitectureStatus, ScanFinding } from "../state/types.js";
+import type { ArchitectureStatus, InterfaceStatus, ScanFinding } from "../state/types.js";
 
 export function createScanFindings(status: ArchitectureStatus, scan: ScanResult): ScanFinding[] {
   const findings: ScanFinding[] = [];
-  const confirmed = new Map(status.interfaces.map((item) => [interfaceKey(item.method, item.path), item]));
+  const confirmed = new Map(
+    status.interfaces.filter(isScannableConfirmedInterface).map((item) => [interfaceKey(item.method, item.path), item]),
+  );
   const scanned = new Map(scan.interfaces.map((item) => [interfaceKey(item.method, item.path), item]));
 
   for (const [key, scannedInterface] of scanned) {
@@ -56,9 +58,17 @@ export function createScanFindings(status: ArchitectureStatus, scan: ScanResult)
 }
 
 function interfaceKey(method?: string, path?: string): string {
-  return `${method ?? "ANY"}:${path ?? ""}`;
+  return `${normalizeMethod(method)}:${path?.trim() ?? ""}`;
 }
 
 function labelFor(method?: string, path?: string): string {
-  return `${method ?? "ANY"} ${path ?? "(unknown path)"}`;
+  return `${normalizeMethod(method)} ${path ?? "(unknown path)"}`;
+}
+
+function normalizeMethod(method?: string): string {
+  return method?.trim().toUpperCase() || "ANY";
+}
+
+function isScannableConfirmedInterface(item: InterfaceStatus): boolean {
+  return item.kind === "http" && typeof item.path === "string" && item.path.trim().length > 0;
 }
