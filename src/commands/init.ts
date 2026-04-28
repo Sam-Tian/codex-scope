@@ -13,7 +13,7 @@ export type InitAnswers = {
 
 export async function runInit(options: { cwd: string; answers: InitAnswers }): Promise<ArchitectureStatus> {
   await assertStatusDoesNotExist(options.cwd);
-  const usedFeatureIds = new Map<string, number>();
+  const usedFeatureIds = new Set<string>();
   const features: FeatureStatus[] = options.answers.features.map((name, index) => ({
     id: uniqueSlug(name, index, usedFeatureIds),
     name,
@@ -59,11 +59,16 @@ async function assertStatusDoesNotExist(root: string): Promise<void> {
   throw new Error(".codex-architecture/status.json already exists. Refusing to overwrite confirmed project state.");
 }
 
-function uniqueSlug(value: string, index: number, used: Map<string, number>): string {
+function uniqueSlug(value: string, index: number, used: Set<string>): string {
   const base = slug(value, index);
-  const count = used.get(base) ?? 0;
-  used.set(base, count + 1);
-  return count === 0 ? base : `${base}-${count + 1}`;
+  let candidate = base;
+  let suffix = 2;
+  while (used.has(candidate)) {
+    candidate = `${base}-${suffix}`;
+    suffix += 1;
+  }
+  used.add(candidate);
+  return candidate;
 }
 
 function slug(value: string, index: number): string {

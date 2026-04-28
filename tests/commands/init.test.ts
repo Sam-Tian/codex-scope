@@ -66,6 +66,22 @@ describe("runInit", () => {
     expect(status.features.map((feature) => feature.id)).toEqual(["api", "api-2", "api-3"]);
   });
 
+  it("avoids collisions with explicit suffix-like feature names", async () => {
+    await runInit({
+      cwd: root,
+      answers: {
+        projectId: "demo",
+        projectName: "Demo",
+        goal: "Track project architecture",
+        phase: "planning",
+        features: ["API", "api-2", "api"],
+      },
+    });
+
+    const status = await readStatusFile(root);
+    expect(status.features.map((feature) => feature.id)).toEqual(["api", "api-2", "api-3"]);
+  });
+
   it("refuses to overwrite an existing status file", async () => {
     await runInit({
       cwd: root,
