@@ -16,14 +16,14 @@ export type CliResult = {
   exitCode: number;
 };
 
-const HELP = `codex-architecture
+const HELP = `codex-scope
 
 Commands:
-  codex-architecture init
-  codex-architecture refresh
-  codex-architecture serve
-  codex-architecture update --from-codex-summary <file>
-  codex-architecture doctor
+  codex-scope init
+  codex-scope refresh
+  codex-scope serve
+  codex-scope update --from-codex-summary <file>
+  codex-scope doctor
 `;
 
 export async function runCli(args: string[], io: CliIO): Promise<CliResult> {
@@ -133,7 +133,7 @@ function parseServePort(args: string[]): number {
 function commandErrorMessage(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
   if (message.includes(".codex-architecture/status.json") && message.includes("ENOENT")) {
-    return "Missing .codex-architecture/status.json. Run codex-architecture init.";
+    return "Missing .codex-architecture/status.json. Run codex-scope init.";
   }
   return message;
 }

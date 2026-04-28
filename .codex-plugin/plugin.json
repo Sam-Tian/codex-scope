@@ -1,11 +1,11 @@
 {
-  "name": "codex-dynamic-architecture",
+  "name": "codex-scope",
   "version": "0.1.0",
   "description": "Codex plugin for generating a dynamic architecture and progress supervision report for the current repository.",
   "keywords": ["codex", "architecture", "progress", "supervision"],
   "skills": "./skills/",
   "interface": {
-    "displayName": "Dynamic Architecture",
+    "displayName": "CodexScope",
     "shortDescription": "Generate a live project architecture and progress report.",
     "longDescription": "Refresh project-local architecture state, scan interface differences, and open a local supervision report for the current repository.",
     "developerName": "Jarvis",

@@ -14,9 +14,9 @@ describe("runCli", () => {
     });
 
     expect(result.exitCode).toBe(0);
-    expect(output.join("\n")).toContain("codex-architecture init");
-    expect(output.join("\n")).toContain("codex-architecture refresh");
-    expect(output.join("\n")).toContain("codex-architecture serve");
+    expect(output.join("\n")).toContain("codex-scope init");
+    expect(output.join("\n")).toContain("codex-scope refresh");
+    expect(output.join("\n")).toContain("codex-scope serve");
   });
 
   it("rejects unknown commands", async () => {

@@ -1,6 +1,6 @@
-# Codex 动态架构图使用文档
+# CodexScope 使用文档
 
-这份文档说明如何使用 Codex Dynamic Architecture Plugin 在当前项目里生成、更新和查看动态架构监管报告。第一版目标是监管单个代码仓库：开发进度、模块状态、接口清单、扫描发现、风险和验证记录都会写入项目本地的 `.codex-architecture/` 目录。
+这份文档说明如何使用 CodexScope 在当前项目里生成、更新和查看动态架构监管报告。第一版目标是监管单个代码仓库：开发进度、模块状态、接口清单、扫描发现、风险和验证记录都会写入项目本地的 `.codex-architecture/` 目录。
 
 ## 从本仓库运行
 
@@ -9,13 +9,13 @@
 ```bash
 npm install
 npm run build
-node ./bin/codex-architecture.js --help
+node ./bin/codex-scope.js --help
 ```
 
-下面的示例默认使用 `codex-architecture` 命令。若还没有全局安装或 link，可以在目标项目目录中改用插件源码仓库的绝对路径：
+下面的示例默认使用 `codex-scope` 命令。若还没有全局安装或 link，可以在目标项目目录中改用插件源码仓库的绝对路径：
 
 ```bash
-node /path/to/codex-dynamic-architecture-plugin/bin/codex-architecture.js --help
+node /path/to/codex-scope/bin/codex-scope.js --help
 ```
 
 ## 初始化一个项目
@@ -43,9 +43,9 @@ node /path/to/codex-dynamic-architecture-plugin/bin/codex-architecture.js --help
 初始化并生成第一版报告：
 
 ```bash
-codex-architecture init --answers answers.json
-codex-architecture doctor
-codex-architecture refresh
+codex-scope init --answers answers.json
+codex-scope doctor
+codex-scope refresh
 ```
 
 执行后会生成：
@@ -65,7 +65,7 @@ codex-architecture refresh
 静态模式适合快速查看当前快照。页面上的刷新提示会告诉你需要回到终端执行：
 
 ```bash
-codex-architecture refresh
+codex-scope refresh
 ```
 
 ## 启动可点击查看器
@@ -73,7 +73,7 @@ codex-architecture refresh
 如果你希望在浏览器里点击刷新按钮，让页面请求本地服务重新扫描并生成报告，运行：
 
 ```bash
-codex-architecture serve
+codex-scope serve
 ```
 
 打开终端打印出的本地 URL。这个 viewer 是任务级本地服务；当你不再需要实时刷新按钮时，可以停止它。若你准备继续调试或让 Codex 继续使用它，也可以保留运行。
@@ -103,9 +103,9 @@ codex-architecture serve
 然后执行：
 
 ```bash
-codex-architecture update --from-codex-summary summary.json
-codex-architecture doctor
-codex-architecture refresh
+codex-scope update --from-codex-summary summary.json
+codex-scope doctor
+codex-scope refresh
 ```
 
 推荐节奏：
@@ -153,7 +153,7 @@ Scanned interface is not recorded: GET /v1/example
 
 ## 常见问题
 
-### `codex-architecture` 命令找不到
+### `codex-scope` 命令找不到
 
 先确认已经构建插件：
 
@@ -164,7 +164,7 @@ npm run build
 如果还没有安装或 link 命令，请使用插件仓库里的 bin 路径：
 
 ```bash
-node /path/to/codex-dynamic-architecture-plugin/bin/codex-architecture.js --help
+node /path/to/codex-scope/bin/codex-scope.js --help
 ```
 
 ### 修改代码后报告没有变化
@@ -172,14 +172,14 @@ node /path/to/codex-dynamic-architecture-plugin/bin/codex-architecture.js --help
 先刷新：
 
 ```bash
-codex-architecture refresh
+codex-scope refresh
 ```
 
 如果是 Codex 完成了新功能，还需要先写入并应用 `summary.json`：
 
 ```bash
-codex-architecture update --from-codex-summary summary.json
-codex-architecture refresh
+codex-scope update --from-codex-summary summary.json
+codex-scope refresh
 ```
 
 ### `doctor` 报错
@@ -187,6 +187,5 @@ codex-architecture refresh
 `doctor` 用来检查 `.codex-architecture/status.json` 的结构是否有效。出现错误时，优先修正 `summary.json` 或状态文件里的字段类型、枚举值、百分比范围和缺失字段，再重新运行：
 
 ```bash
-codex-architecture doctor
+codex-scope doctor
 ```
-

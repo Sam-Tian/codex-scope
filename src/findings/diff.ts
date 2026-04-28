@@ -49,7 +49,7 @@ export function createScanFindings(status: ArchitectureStatus, scan: ScanResult)
       detail: error.message,
       affectedIds: [],
       proposedAction:
-        "Fix the scanner error, then run codex-architecture refresh again. Do not overwrite confirmed state while scanning is failing.",
+        "Fix the scanner error, then run codex-scope refresh again. Do not overwrite confirmed state while scanning is failing.",
       evidenceIds: [],
     });
   }

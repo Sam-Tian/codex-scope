@@ -1,4 +1,4 @@
-# Codex Dynamic Architecture Usage
+# CodexScope Usage
 
 ## Run From This Repository
 
@@ -7,10 +7,10 @@ From a source checkout, install dependencies and build the CLI first:
 ```bash
 npm install
 npm run build
-node ./bin/codex-architecture.js --help
+node ./bin/codex-scope.js --help
 ```
 
-The examples below use `codex-architecture`. When developing this repository locally, replace it with `node /path/to/codex-dynamic-architecture-plugin/bin/codex-architecture.js` or link/install the package so the command is on your PATH.
+The examples below use `codex-scope`. When developing this repository locally, replace it with `node /path/to/codex-scope/bin/codex-scope.js` or link/install the package so the command is on your PATH.
 
 ## Initialize A Repository
 
@@ -29,9 +29,9 @@ Create an answers file:
 Run:
 
 ```bash
-codex-architecture init --answers answers.json
-codex-architecture doctor
-codex-architecture refresh
+codex-scope init --answers answers.json
+codex-scope doctor
+codex-scope refresh
 ```
 
 Open `.codex-architecture/report.html`.
@@ -41,7 +41,7 @@ Open `.codex-architecture/report.html`.
 Run:
 
 ```bash
-codex-architecture serve
+codex-scope serve
 ```
 
 Open the printed local URL. The page refresh button works in served mode.
@@ -73,9 +73,9 @@ Create a redacted summary JSON file:
 Run:
 
 ```bash
-codex-architecture update --from-codex-summary summary.json
-codex-architecture doctor
-codex-architecture refresh
+codex-scope update --from-codex-summary summary.json
+codex-scope doctor
+codex-scope refresh
 ```
 
 Do not include secrets, raw logs, environment variable values, private keys, or raw transcripts in the answers or summary files.

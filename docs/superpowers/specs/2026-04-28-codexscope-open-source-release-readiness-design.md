@@ -2,7 +2,7 @@
 
 ## Goal
 
-Prepare CodexScope for a GitHub open-source launch as a Codex skill/plugin project. The release should help Codex users understand, install, run, and improve the Dynamic Architecture skill without reading the whole implementation first.
+Prepare CodexScope for a GitHub open-source launch as a Codex skill/plugin project. The release should help Codex users understand, install, run, and improve the CodexScope skill without reading the whole implementation first.
 
 The project remains GitHub-first and skill/plugin-first. The CLI is documented as the local execution engine and advanced usage path, not as the main public identity of the repository.
 

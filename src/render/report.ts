@@ -26,7 +26,7 @@ export function renderReportHtml(status: ArchitectureStatus, options: RenderRepo
   const progressDegrees = Math.max(0, Math.min(100, options.progress.percent)) * 3.6;
   const staticRefresh = options.servedMode
     ? ""
-    : '<section id="static-refresh" class="command hidden">Run: codex-architecture refresh</section>';
+    : '<section id="static-refresh" class="command hidden">Run: codex-scope refresh</section>';
 
   return `<!doctype html>
 <html lang="en">

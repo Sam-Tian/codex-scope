@@ -1,10 +1,10 @@
 {
-  "name": "codex-dynamic-architecture-plugin",
+  "name": "codex-scope",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "bin": {
-    "codex-architecture": "./bin/codex-architecture.js"
+    "codex-scope": "./bin/codex-scope.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

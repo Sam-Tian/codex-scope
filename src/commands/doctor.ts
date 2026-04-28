@@ -15,7 +15,7 @@ export async function runDoctor(options: { cwd: string }): Promise<DoctorResult>
   } catch {
     return {
       ok: false,
-      messages: ["Missing .codex-architecture/status.json. Run codex-architecture init."],
+      messages: ["Missing .codex-architecture/status.json. Run codex-scope init."],
     };
   }
 

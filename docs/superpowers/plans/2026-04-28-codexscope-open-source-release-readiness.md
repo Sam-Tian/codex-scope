@@ -28,7 +28,7 @@
 - Modify: `README.md`
 - Read: `docs/usage.md`
 - Read: `docs/usage.zh-CN.md`
-- Read: `skills/dynamic-architecture/SKILL.md`
+- Read: `skills/codex-scope/SKILL.md`
 - Read: `.codex-plugin/plugin.json`
 
 - [ ] **Step 1: Review the current public docs**
@@ -38,7 +38,7 @@ Run:
 ```bash
 sed -n '1,240p' README.md
 sed -n '1,260p' docs/usage.md
-sed -n '1,220p' skills/dynamic-architecture/SKILL.md
+sed -n '1,220p' skills/codex-scope/SKILL.md
 sed -n '1,220p' .codex-plugin/plugin.json
 ```
 
@@ -85,8 +85,8 @@ The scanner may find code paths and route names. Treat generated state as projec
 
 ```text
 .codex-plugin/plugin.json          Codex plugin metadata
-skills/dynamic-architecture/       Codex skill wrapper
-bin/codex-architecture.js          CLI entry point
+skills/codex-scope/       Codex skill wrapper
+bin/codex-scope.js          CLI entry point
 src/                              TypeScript CLI implementation
 tests/                            Vitest test suite and fixtures
 docs/usage.md                     English command reference
@@ -101,22 +101,22 @@ git clone <this-repository-url>
 cd CodexScope
 npm install
 npm run build
-node ./bin/codex-architecture.js --help
+node ./bin/codex-scope.js --help
 ```
 
 When trying the CLI from another repository, run the built CLI from that target repository:
 
 ```bash
 cd /path/to/your/project
-node /path/to/CodexScope/bin/codex-architecture.js --help
+node /path/to/CodexScope/bin/codex-scope.js --help
 ```
 
 ## Codex Skill Usage
 
-The plugin exposes the `dynamic-architecture` skill:
+The plugin exposes the `codex-scope` skill:
 
 ```yaml
-name: dynamic-architecture
+name: codex-scope
 description: Generate, refresh, or update the project-local dynamic architecture supervision report for the current repository.
 ```
 
@@ -130,19 +130,19 @@ The skill guides Codex to:
 
 1. Check whether `.codex-architecture/status.json` exists.
 2. Initialize the project if needed.
-3. Run `codex-architecture doctor`.
-4. Run `codex-architecture refresh`.
-5. Optionally run `codex-architecture serve` for a local clickable viewer.
+3. Run `codex-scope doctor`.
+4. Run `codex-scope refresh`.
+5. Optionally run `codex-scope serve` for a local clickable viewer.
 6. Update state from a short redacted Codex summary after development work.
 
 ## CLI Commands
 
 ```bash
-codex-architecture init --answers answers.json
-codex-architecture doctor
-codex-architecture refresh
-codex-architecture serve
-codex-architecture update --from-codex-summary summary.json
+codex-scope init --answers answers.json
+codex-scope doctor
+codex-scope refresh
+codex-scope serve
+codex-scope update --from-codex-summary summary.json
 ```
 
 See [docs/usage.md](docs/usage.md) for full examples.
@@ -285,7 +285,7 @@ npm test
 ## Useful Commands
 
 ```bash
-node ./bin/codex-architecture.js --help
+node ./bin/codex-scope.js --help
 npm pack --dry-run
 ```
 
@@ -293,7 +293,7 @@ To test the CLI against a fixture or another repository, run the built CLI from 
 
 ## Contribution Areas
 
-- Skill workflow improvements in `skills/dynamic-architecture/SKILL.md`.
+- Skill workflow improvements in `skills/codex-scope/SKILL.md`.
 - Scanner support in `src/scan/`.
 - State validation and progress handling in `src/state/`.
 - Scan finding logic in `src/findings/`.
@@ -519,13 +519,13 @@ Replace `package.json` with:
 
 ```json
 {
-  "name": "codex-dynamic-architecture-plugin",
+  "name": "codex-scope",
   "version": "0.1.0",
   "description": "Codex skill and plugin for project-local dynamic architecture and progress supervision.",
   "license": "MIT",
   "type": "module",
   "bin": {
-    "codex-architecture": "./bin/codex-architecture.js"
+    "codex-scope": "./bin/codex-scope.js"
   },
   "keywords": [
     "codex",

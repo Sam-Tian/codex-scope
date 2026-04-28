@@ -18,7 +18,7 @@ describe("runDoctor", () => {
   it("reports missing status file", async () => {
     await expect(runDoctor({ cwd: root })).resolves.toEqual({
       ok: false,
-      messages: ["Missing .codex-architecture/status.json. Run codex-architecture init."],
+      messages: ["Missing .codex-architecture/status.json. Run codex-scope init."],
     });
   });
 

@@ -91,7 +91,7 @@ describe("renderReportHtml", () => {
     expect(html).toContain("POST /v1/api-keys");
     expect(html).toContain("API key creation");
     expect(html).toContain("Scanned interface is not recorded");
-    expect(html).toContain("codex-architecture refresh");
+    expect(html).toContain("codex-scope refresh");
     expect(html).toContain("data-node-id=\"api\"");
   });
 
@@ -129,7 +129,7 @@ describe("renderReportHtml", () => {
 
     expect(html).toContain("data-refresh-mode=\"served\"");
     expect(html).toContain("fetch(\"/refresh\"");
-    expect(html).not.toContain("Run: codex-architecture refresh");
+    expect(html).not.toContain("Run: codex-scope refresh");
   });
 
   it("escapes HTML in rendered content and embedded JSON script", () => {
