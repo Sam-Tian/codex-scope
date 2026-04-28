@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { runDoctor } from "./commands/doctor.js";
 import { runInit, type InitAnswers } from "./commands/init.js";
 import { runRefresh } from "./commands/refresh.js";
+import { startViewerServer } from "./commands/serve.js";
 import { runUpdate } from "./commands/update.js";
 import { parseJsonObject } from "./utils/json.js";
 
@@ -75,8 +76,18 @@ export async function runCli(args: string[], io: CliIO): Promise<CliResult> {
     }
 
     if (command === "serve") {
-      io.stderr(`Command unavailable in current scaffold: ${command}`);
-      return { exitCode: 1 };
+      const portValue = valueAfter(args, "--port");
+      const server = await startViewerServer({ cwd: io.cwd, port: portValue ? Number(portValue) : 0 });
+      io.stdout(`Viewer running: ${server.url}`);
+      io.stdout("Press Ctrl+C to stop.");
+      return new Promise<CliResult>((resolve) => {
+        const stop = async () => {
+          await server.close();
+          resolve({ exitCode: 0 });
+        };
+        process.once("SIGINT", stop);
+        process.once("SIGTERM", stop);
+      });
     }
 
     io.stderr(`Unknown command: ${command}`);
