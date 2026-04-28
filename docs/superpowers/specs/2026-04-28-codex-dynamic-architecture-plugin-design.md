@@ -36,7 +36,7 @@ After initialization, the normal flow is:
 4. The CLI generates scan findings, progress summaries, and `.codex-architecture/report.html`.
 5. The plugin opens or points the user to the HTML report.
 
-The HTML report has a manual refresh button. First version refresh is explicit, not automatic background monitoring.
+The HTML report has a manual refresh affordance. When the plugin opens the report through a task-scoped local viewer server, the refresh button calls the CLI refresh flow. When the report is opened as a static file, the refresh control shows the exact `codex-architecture refresh` command to run. First version refresh is explicit, not automatic background monitoring.
 
 ## First Screen Layout
 
@@ -54,6 +54,11 @@ Status colors:
 - Gray: unknown, not started, or low-confidence.
 
 Clicking a module or interface updates the right panel. The default panel shows function explanation, development status, completion percentage, and blockers. Deeper information is available in collapsed sections: callers, callees, traffic flow, evidence files, recent changes, and test coverage.
+
+The refresh control has two modes:
+
+- Served mode: the report is opened through the plugin's task-scoped local viewer server, and the button calls a local refresh endpoint that reruns `codex-architecture refresh`.
+- Static mode: the report is opened directly from disk, and the control displays the command the user or Codex should run.
 
 ## Project State Directory
 
@@ -143,6 +148,10 @@ Initializes the current repository. It runs an interactive project setup, scans 
 `codex-architecture refresh`
 
 Reads `status.json`, scans the repository, updates `scanFindings`, and renders `report.html`.
+
+`codex-architecture serve`
+
+Starts a task-scoped local viewer for the current repository. It serves `report.html` and exposes a local refresh endpoint used by the page refresh button. It is not a persistent background monitor and should be stopped when no longer needed.
 
 `codex-architecture update --from-codex-summary <file>`
 
