@@ -97,8 +97,8 @@ docs/superpowers/                 Internal design and implementation history
 ## Quick Start From Source
 
 ```bash
-git clone <this-repository-url>
-cd CodexScope
+git clone https://github.com/Sam-Tian/codex-scope.git
+cd codex-scope
 npm install
 npm run build
 node ./bin/codex-scope.js --help
@@ -108,7 +108,7 @@ When trying the CLI from another repository, run the built CLI from that target 
 
 ```bash
 cd /path/to/your/project
-node /path/to/CodexScope/bin/codex-scope.js --help
+node /path/to/codex-scope/bin/codex-scope.js --help
 ```
 
 ## Codex Skill Usage
@@ -211,10 +211,10 @@ MIT. See [LICENSE](LICENSE).
 Run:
 
 ```bash
-rg -n "this-repository-url|TODO|TBD|npm publishing automation|docs/usage|docs/usage.zh-CN|CONTRIBUTING|LICENSE" README.md
+rg -n "TODO|TBD|npm publishing automation|docs/usage|docs/usage.zh-CN|CONTRIBUTING|LICENSE|https://github.com/Sam-Tian/codex-scope.git" README.md
 ```
 
-Expected: The only placeholder-like text is `<this-repository-url>`, intentionally used because the GitHub URL is not known locally. There are no `TODO` or `TBD` markers.
+Expected: The README contains the real GitHub URL and required links. There are no `TODO`, `TBD`, or repository URL placeholders.
 
 - [ ] **Step 4: Commit README change**
 
