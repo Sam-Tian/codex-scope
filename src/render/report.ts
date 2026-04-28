@@ -229,6 +229,7 @@ h3{font-size:15px}
 .node,.list-row{width:100%;border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:12px;text-align:left;cursor:pointer;min-height:68px}
 .node strong,.list-row strong{display:block;font-size:14px;line-height:1.3}
 .node span,.list-row span{display:block;color:var(--muted);font-size:12px;margin-top:6px;line-height:1.35}
+.node,.list-row,.details{min-width:0;overflow-wrap:anywhere}
 .split{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 .stack{display:grid;gap:8px}
 .complete{border-color:var(--green);background:var(--green-bg)}

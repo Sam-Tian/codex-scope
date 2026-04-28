@@ -95,6 +95,24 @@ describe("renderReportHtml", () => {
     expect(html).toContain("data-node-id=\"api\"");
   });
 
+  it("includes detail panel markup and per-item click handlers", () => {
+    const html = renderReportHtml(status, {
+      progress: { percent: 70, basis: "equal", featureCount: 1, weights: [] },
+      servedMode: false,
+    });
+
+    expect(html).toContain('class="details" id="details"');
+    expect(html).toContain('data-feature-id="keys"');
+    expect(html).toContain('data-interface-id="post-api-keys"');
+    expect(html).toContain('data-flow-id="api-key-flow"');
+    expect(html).toContain('data-finding-id="missing-in-status:POST:/v1/new"');
+    expect(html).toContain('addEventListener("click"');
+    expect(html).toContain("Callers");
+    expect(html).toContain("Callees");
+    expect(html).toContain("Proposal");
+    expect(html).toContain("Evidence");
+  });
+
   it("renders served refresh mode without the static command button behavior", () => {
     const html = renderReportHtml(status, {
       progress: { percent: 70, basis: "equal", featureCount: 1, weights: [] },
