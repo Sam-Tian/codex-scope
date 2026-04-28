@@ -49,6 +49,7 @@ export function validateStatus(value: unknown): ValidationResult {
     requireString(feature.purpose, `${path}.purpose`, errors);
     requireEnum(feature.status, workStatuses, `${path}.status`, errors);
     requirePercent(feature.percent, `${path}.percent`, errors);
+    requireOptionalPositiveFiniteNumber(feature.weight, `${path}.weight`, errors);
     requireStringArray(feature.acceptance, `${path}.acceptance`, errors);
     requireStringArray(feature.moduleIds, `${path}.moduleIds`, errors);
     requireStringArray(feature.interfaceIds, `${path}.interfaceIds`, errors);
@@ -152,6 +153,12 @@ function requireString(value: unknown, path: string, errors: ValidationError[]):
 function requireOptionalString(value: unknown, path: string, errors: ValidationError[]): void {
   if (value !== undefined && typeof value !== "string") {
     errors.push({ path, message: "Expected string" });
+  }
+}
+
+function requireOptionalPositiveFiniteNumber(value: unknown, path: string, errors: ValidationError[]): void {
+  if (value !== undefined && (typeof value !== "number" || !Number.isFinite(value) || value <= 0)) {
+    errors.push({ path, message: "Expected positive finite number" });
   }
 }
 

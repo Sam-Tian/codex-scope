@@ -122,6 +122,32 @@ describe("validateStatus", () => {
     });
   });
 
+  it("accepts positive feature weight", () => {
+    const weightedStatus = {
+      ...validStatus,
+      features: [{ ...validStatus.features[0], weight: 2 }],
+    };
+
+    expect(validateStatus(weightedStatus)).toEqual({ ok: true, errors: [] });
+  });
+
+  it.each(["high", 0, -1])("rejects invalid feature weight %s", (weight) => {
+    const invalid = {
+      ...validStatus,
+      features: [{ ...validStatus.features[0], weight }],
+    };
+
+    expect(validateStatus(invalid)).toEqual({
+      ok: false,
+      errors: [
+        {
+          path: "features[0].weight",
+          message: "Expected positive finite number",
+        },
+      ],
+    });
+  });
+
   it.each([
     {
       name: "interface kind",
