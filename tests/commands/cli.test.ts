@@ -27,4 +27,16 @@ describe("runCli", () => {
     expect(result.exitCode).toBe(1);
     expect(errors.join("\n")).toContain("Unknown command: wat");
   });
+
+  it("returns a stable failure result for command errors", async () => {
+    const errors: string[] = [];
+    const result = await runCli(["refresh"], {
+      cwd: process.cwd(),
+      stdout: () => undefined,
+      stderr: (line) => errors.push(line),
+    });
+
+    expect(result.exitCode).toBe(1);
+    expect(errors.join("\n")).toContain("Missing .codex-architecture/status.json");
+  });
 });

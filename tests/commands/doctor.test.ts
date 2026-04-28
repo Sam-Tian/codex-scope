@@ -30,4 +30,14 @@ describe("runDoctor", () => {
     expect(result.ok).toBe(false);
     expect(result.messages.join("\n")).toContain("project.id");
   });
+
+  it("reports malformed status JSON", async () => {
+    await mkdir(join(root, ".codex-architecture"), { recursive: true });
+    await writeFile(join(root, ".codex-architecture/status.json"), "{nope", "utf8");
+
+    const result = await runDoctor({ cwd: root });
+
+    expect(result.ok).toBe(false);
+    expect(result.messages.join("\n")).toContain("Invalid JSON");
+  });
 });

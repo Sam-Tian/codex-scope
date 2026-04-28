@@ -19,7 +19,16 @@ export async function runDoctor(options: { cwd: string }): Promise<DoctorResult>
     };
   }
 
-  const parsed = parseJsonObject(await readFile(statusPath, "utf8"), statusPath);
+  let parsed: unknown;
+  try {
+    parsed = parseJsonObject(await readFile(statusPath, "utf8"), statusPath);
+  } catch (error) {
+    return {
+      ok: false,
+      messages: [error instanceof Error ? error.message : String(error)],
+    };
+  }
+
   const validation = validateStatus(parsed);
   if (!validation.ok) {
     return {

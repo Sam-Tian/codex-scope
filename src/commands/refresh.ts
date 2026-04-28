@@ -19,7 +19,10 @@ export type RefreshResult = {
 export async function runRefresh(options: RefreshOptions): Promise<RefreshResult> {
   const status = await readStatusFile(options.cwd);
   const scan = await scanRepository(options.cwd);
-  const findings = createScanFindings(status, scan);
+  const findings =
+    scan.errors.length > 0
+      ? createScanFindings({ ...status, interfaces: [] }, { ...scan, interfaces: [] })
+      : createScanFindings(status, scan);
   const nextStatus = {
     ...status,
     project: {
