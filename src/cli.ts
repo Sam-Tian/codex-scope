@@ -1,5 +1,9 @@
+import { readFile } from "node:fs/promises";
 import { runDoctor } from "./commands/doctor.js";
+import { runInit, type InitAnswers } from "./commands/init.js";
 import { runRefresh } from "./commands/refresh.js";
+import { runUpdate } from "./commands/update.js";
+import { parseJsonObject } from "./utils/json.js";
 
 export type CliIO = {
   cwd: string;
@@ -45,7 +49,32 @@ export async function runCli(args: string[], io: CliIO): Promise<CliResult> {
       return { exitCode: result.ok ? 0 : 1 };
     }
 
-    if (["init", "serve", "update"].includes(command)) {
+    if (command === "init") {
+      const answersFile = valueAfter(args, "--answers");
+      if (!answersFile) {
+        io.stderr(
+          "Missing --answers <file>. Ask the user for project details, write an answers JSON file, then pass --answers <file>.",
+        );
+        return { exitCode: 1 };
+      }
+      const answers = parseJsonObject(await readFile(answersFile, "utf8"), answersFile) as InitAnswers;
+      await runInit({ cwd: io.cwd, answers });
+      io.stdout("Initialized .codex-architecture/status.json");
+      return { exitCode: 0 };
+    }
+
+    if (command === "update") {
+      const summaryPath = valueAfter(args, "--from-codex-summary");
+      if (!summaryPath) {
+        io.stderr("Missing --from-codex-summary <file>");
+        return { exitCode: 1 };
+      }
+      await runUpdate({ cwd: io.cwd, summaryPath });
+      io.stdout("Updated architecture status from Codex summary");
+      return { exitCode: 0 };
+    }
+
+    if (command === "serve") {
       io.stderr(`Command unavailable in current scaffold: ${command}`);
       return { exitCode: 1 };
     }
@@ -57,6 +86,11 @@ export async function runCli(args: string[], io: CliIO): Promise<CliResult> {
     io.stderr(commandErrorMessage(error));
     return { exitCode: 1 };
   }
+}
+
+function valueAfter(args: string[], flag: string): string | undefined {
+  const index = args.indexOf(flag);
+  return index >= 0 ? args[index + 1] : undefined;
 }
 
 function commandErrorMessage(error: unknown): string {
