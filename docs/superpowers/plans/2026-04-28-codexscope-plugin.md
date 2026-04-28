@@ -1,4 +1,4 @@
-# Codex Dynamic Architecture Plugin Implementation Plan
+# CodexScope Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -13,11 +13,11 @@
 ## File Structure
 
 - Create `.codex-plugin/plugin.json`: Codex plugin metadata.
-- Create `skills/dynamic-architecture/SKILL.md`: plugin entrypoint instructions for Codex.
+- Create `skills/codex-scope/SKILL.md`: plugin entrypoint instructions for Codex.
 - Create `package.json`: npm scripts, CLI bin, dev dependencies.
 - Create `tsconfig.json`: TypeScript compiler config.
 - Create `vitest.config.ts`: Vitest config.
-- Create `bin/codex-architecture.js`: executable wrapper for built CLI.
+- Create `bin/codex-scope.js`: executable wrapper for built CLI.
 - Create `src/cli.ts`: argument parsing and command dispatch.
 - Create `src/commands/init.ts`: project initialization command.
 - Create `src/commands/refresh.ts`: scan, merge, and report render command.
@@ -53,7 +53,7 @@
 - Create: `package.json`
 - Create: `tsconfig.json`
 - Create: `vitest.config.ts`
-- Create: `bin/codex-architecture.js`
+- Create: `bin/codex-scope.js`
 - Create: `src/cli.ts`
 - Create: `tests/commands/cli.test.ts`
 
@@ -75,9 +75,9 @@ describe("runCli", () => {
     });
 
     expect(result.exitCode).toBe(0);
-    expect(output.join("\n")).toContain("codex-architecture init");
-    expect(output.join("\n")).toContain("codex-architecture refresh");
-    expect(output.join("\n")).toContain("codex-architecture serve");
+    expect(output.join("\n")).toContain("codex-scope init");
+    expect(output.join("\n")).toContain("codex-scope refresh");
+    expect(output.join("\n")).toContain("codex-scope serve");
   });
 
   it("rejects unknown commands", async () => {
@@ -100,12 +100,12 @@ Create `package.json`:
 
 ```json
 {
-  "name": "codex-dynamic-architecture-plugin",
+  "name": "codex-scope",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "bin": {
-    "codex-architecture": "./bin/codex-architecture.js"
+    "codex-scope": "./bin/codex-scope.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -156,7 +156,7 @@ export default defineConfig({
 });
 ```
 
-Create `bin/codex-architecture.js`:
+Create `bin/codex-scope.js`:
 
 ```js
 #!/usr/bin/env node
@@ -186,14 +186,14 @@ export type CliResult = {
   exitCode: number;
 };
 
-const HELP = `codex-architecture
+const HELP = `codex-scope
 
 Commands:
-  codex-architecture init
-  codex-architecture refresh
-  codex-architecture serve
-  codex-architecture update --from-codex-summary <file>
-  codex-architecture doctor
+  codex-scope init
+  codex-scope refresh
+  codex-scope serve
+  codex-scope update --from-codex-summary <file>
+  codex-scope doctor
 `;
 
 export async function runCli(args: string[], io: CliIO): Promise<CliResult> {
@@ -226,7 +226,7 @@ Expected: PASS for the help and unknown-command tests.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add package.json package-lock.json tsconfig.json vitest.config.ts bin/codex-architecture.js src/cli.ts tests/commands/cli.test.ts
+git add package.json package-lock.json tsconfig.json vitest.config.ts bin/codex-scope.js src/cli.ts tests/commands/cli.test.ts
 git commit -m "chore: scaffold codex architecture CLI"
 ```
 
@@ -1346,7 +1346,7 @@ export function createScanFindings(status: ArchitectureStatus, scan: ScanResult)
       title: `Scanner error: ${error.source}`,
       detail: error.message,
       affectedIds: [],
-      proposedAction: "Fix the scanner error, then run codex-architecture refresh again. Do not overwrite confirmed state while scanning is failing.",
+      proposedAction: "Fix the scanner error, then run codex-scope refresh again. Do not overwrite confirmed state while scanning is failing.",
       evidenceIds: [],
     });
   }
@@ -1459,7 +1459,7 @@ describe("renderReportHtml", () => {
     expect(html).toContain("Demo");
     expect(html).toContain("API keys");
     expect(html).toContain("POST /v1/api-keys");
-    expect(html).toContain("codex-architecture refresh");
+    expect(html).toContain("codex-scope refresh");
     expect(html).toContain("data-node-id=\"api\"");
   });
 });
@@ -1552,7 +1552,7 @@ export function renderReportHtml(status: ArchitectureStatus, options: RenderRepo
       <h3>Interfaces</h3>
       ${interfaceRows || "<p>No interfaces recorded yet.</p>"}
     </section>
-    <section id="static-refresh" class="hidden command">Run: codex-architecture refresh</section>
+    <section id="static-refresh" class="hidden command">Run: codex-scope refresh</section>
   </main>
   <aside class="details" id="details">
     <h2>Project</h2>
@@ -1692,7 +1692,7 @@ describe("runDoctor", () => {
   it("reports missing status file", async () => {
     await expect(runDoctor({ cwd: root })).resolves.toEqual({
       ok: false,
-      messages: ["Missing .codex-architecture/status.json. Run codex-architecture init."],
+      messages: ["Missing .codex-architecture/status.json. Run codex-scope init."],
     });
   });
 
@@ -1775,7 +1775,7 @@ export async function runDoctor(options: { cwd: string }): Promise<DoctorResult>
   } catch {
     return {
       ok: false,
-      messages: ["Missing .codex-architecture/status.json. Run codex-architecture init."],
+      messages: ["Missing .codex-architecture/status.json. Run codex-scope init."],
     };
   }
 
@@ -1810,14 +1810,14 @@ export type CliResult = {
   exitCode: number;
 };
 
-const HELP = `codex-architecture
+const HELP = `codex-scope
 
 Commands:
-  codex-architecture init
-  codex-architecture refresh
-  codex-architecture serve
-  codex-architecture update --from-codex-summary <file>
-  codex-architecture doctor
+  codex-scope init
+  codex-scope refresh
+  codex-scope serve
+  codex-scope update --from-codex-summary <file>
+  codex-scope doctor
 `;
 
 export async function runCli(args: string[], io: CliIO): Promise<CliResult> {
@@ -2331,7 +2331,7 @@ git commit -m "feat: serve report with manual refresh endpoint"
 
 **Files:**
 - Create: `.codex-plugin/plugin.json`
-- Create: `skills/dynamic-architecture/SKILL.md`
+- Create: `skills/codex-scope/SKILL.md`
 - Create: `tests/plugin/skill.test.ts`
 
 - [ ] **Step 1: Write plugin metadata test**
@@ -2349,13 +2349,13 @@ describe("Codex plugin files", () => {
       version: string;
       description: string;
     };
-    const skill = await readFile("skills/dynamic-architecture/SKILL.md", "utf8");
+    const skill = await readFile("skills/codex-scope/SKILL.md", "utf8");
 
-    expect(plugin.name).toBe("codex-dynamic-architecture");
+    expect(plugin.name).toBe("codex-scope");
     expect(plugin.version).toBe("0.1.0");
     expect(plugin.description).toContain("dynamic architecture");
-    expect(skill).toContain("codex-architecture refresh");
-    expect(skill).toContain("codex-architecture serve");
+    expect(skill).toContain("codex-scope refresh");
+    expect(skill).toContain("codex-scope serve");
     expect(skill).toContain("Never store secrets");
   });
 });
@@ -2367,13 +2367,13 @@ Create `.codex-plugin/plugin.json`:
 
 ```json
 {
-  "name": "codex-dynamic-architecture",
+  "name": "codex-scope",
   "version": "0.1.0",
   "description": "Codex plugin for generating a dynamic architecture and progress supervision report for the current repository.",
   "skills": [
     {
-      "name": "dynamic-architecture",
-      "path": "skills/dynamic-architecture/SKILL.md"
+      "name": "codex-scope",
+      "path": "skills/codex-scope/SKILL.md"
     }
   ]
 }
@@ -2381,11 +2381,11 @@ Create `.codex-plugin/plugin.json`:
 
 - [ ] **Step 3: Create skill instructions**
 
-Create `skills/dynamic-architecture/SKILL.md`:
+Create `skills/codex-scope/SKILL.md`:
 
 ```markdown
 ---
-name: dynamic-architecture
+name: codex-scope
 description: Generate, refresh, or update the project-local dynamic architecture supervision report for the current repository.
 ---
 
@@ -2406,9 +2406,9 @@ Use this skill when the user asks to inspect project progress, generate a dynami
 1. If `.codex-architecture/status.json` is missing, initialize the project:
    - Ask for project name, goal, phase, and core features.
    - Save answers to a temporary JSON file.
-   - Run `codex-architecture init --answers <answers-file>`.
-2. Run `codex-architecture refresh`.
-3. If the user wants a clickable report with a working refresh button, run `codex-architecture serve`.
+   - Run `codex-scope init --answers <answers-file>`.
+2. Run `codex-scope refresh`.
+3. If the user wants a clickable report with a working refresh button, run `codex-scope serve`.
 4. Give the user the report path or local viewer URL.
 
 ## After Codex Development Work
@@ -2419,17 +2419,17 @@ Use this skill when the user asks to inspect project progress, generate a dynami
    - `moduleUpdates`
    - `interfaceUpdates`
    - `verification`
-2. Run `codex-architecture update --from-codex-summary <summary-file>`.
-3. Run `codex-architecture refresh`.
+2. Run `codex-scope update --from-codex-summary <summary-file>`.
+3. Run `codex-scope refresh`.
 4. Report what changed and whether any scan findings need confirmation.
 
 ## Commands
 
-- `codex-architecture init --answers <answers-file>`
-- `codex-architecture refresh`
-- `codex-architecture serve`
-- `codex-architecture update --from-codex-summary <summary-file>`
-- `codex-architecture doctor`
+- `codex-scope init --answers <answers-file>`
+- `codex-scope refresh`
+- `codex-scope serve`
+- `codex-scope update --from-codex-summary <summary-file>`
+- `codex-scope doctor`
 ```
 
 - [ ] **Step 4: Run tests**
@@ -2441,7 +2441,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add .codex-plugin/plugin.json skills/dynamic-architecture/SKILL.md tests/plugin/skill.test.ts
+git add .codex-plugin/plugin.json skills/codex-scope/SKILL.md tests/plugin/skill.test.ts
 git commit -m "feat: add Codex plugin skill wrapper"
 ```
 
@@ -2518,7 +2518,7 @@ describe("architecture workflow", () => {
 Create `docs/usage.md`:
 
 ```markdown
-# Codex Dynamic Architecture Usage
+# CodexScope Usage
 
 ## Initialize a Repository
 
@@ -2537,8 +2537,8 @@ Create an answers file:
 Run:
 
 ```bash
-codex-architecture init --answers answers.json
-codex-architecture refresh
+codex-scope init --answers answers.json
+codex-scope refresh
 ```
 
 Open `.codex-architecture/report.html`.
@@ -2548,7 +2548,7 @@ Open `.codex-architecture/report.html`.
 Run:
 
 ```bash
-codex-architecture serve
+codex-scope serve
 ```
 
 Open the printed local URL. The page refresh button works in served mode.
@@ -2558,8 +2558,8 @@ Open the printed local URL. The page refresh button works in served mode.
 Create a redacted summary JSON file and run:
 
 ```bash
-codex-architecture update --from-codex-summary summary.json
-codex-architecture refresh
+codex-scope update --from-codex-summary summary.json
+codex-scope refresh
 ```
 
 Do not include secrets, raw logs, environment variable values, or full transcripts in the summary.
@@ -2568,7 +2568,7 @@ Do not include secrets, raw logs, environment variable values, or full transcrip
 Create `README.md`:
 
 ```markdown
-# Codex Dynamic Architecture Plugin
+# CodexScope
 
 Codex plugin and local CLI for generating a project-local architecture and progress supervision report.
 
