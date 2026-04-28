@@ -34,6 +34,7 @@ export function validateStatus(value: unknown): ValidationResult {
   validateArray(status.features, "features", errors, (feature, path) => {
     requireString(feature.id, `${path}.id`, errors);
     requireString(feature.name, `${path}.name`, errors);
+    requireString(feature.purpose, `${path}.purpose`, errors);
     requireEnum(feature.status, workStatuses, `${path}.status`, errors);
     requirePercent(feature.percent, `${path}.percent`, errors);
     requireStringArray(feature.acceptance, `${path}.acceptance`, errors);

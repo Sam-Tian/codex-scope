@@ -104,4 +104,21 @@ describe("validateStatus", () => {
       ],
     });
   });
+
+  it("requires feature purpose", () => {
+    const invalid = {
+      ...validStatus,
+      features: [{ ...validStatus.features[0], purpose: "" }],
+    };
+
+    expect(validateStatus(invalid)).toEqual({
+      ok: false,
+      errors: [
+        {
+          path: "features[0].purpose",
+          message: "Expected non-empty string",
+        },
+      ],
+    });
+  });
 });
