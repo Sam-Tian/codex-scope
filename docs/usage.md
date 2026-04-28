@@ -1,5 +1,17 @@
 # Codex Dynamic Architecture Usage
 
+## Run From This Repository
+
+From a source checkout, install dependencies and build the CLI first:
+
+```bash
+npm install
+npm run build
+node ./bin/codex-architecture.js --help
+```
+
+The examples below use `codex-architecture`. When developing this repository locally, replace it with `node /path/to/codex-dynamic-architecture-plugin/bin/codex-architecture.js` or link/install the package so the command is on your PATH.
+
 ## Initialize A Repository
 
 Create an answers file:
@@ -66,4 +78,4 @@ codex-architecture doctor
 codex-architecture refresh
 ```
 
-Do not include secrets, raw logs, environment variable values, private keys, or full transcripts in the answers or summary files.
+Do not include secrets, raw logs, environment variable values, private keys, or raw transcripts in the answers or summary files.
