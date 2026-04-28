@@ -1,3 +1,6 @@
+import { runDoctor } from "./commands/doctor.js";
+import { runRefresh } from "./commands/refresh.js";
+
 export type CliIO = {
   cwd: string;
   stdout: (line: string) => void;
@@ -26,12 +29,27 @@ export async function runCli(args: string[], io: CliIO): Promise<CliResult> {
     return { exitCode: 0 };
   }
 
-  if (!["init", "refresh", "serve", "update", "doctor"].includes(command)) {
-    io.stderr(`Unknown command: ${command}`);
-    io.stderr(HELP);
+  if (command === "refresh") {
+    const result = await runRefresh({ cwd: io.cwd, servedMode: false });
+    io.stdout(`Report written: ${result.reportPath}`);
+    io.stdout(`Scan findings: ${result.findingCount}`);
+    return { exitCode: 0 };
+  }
+
+  if (command === "doctor") {
+    const result = await runDoctor({ cwd: io.cwd });
+    for (const message of result.messages) {
+      (result.ok ? io.stdout : io.stderr)(message);
+    }
+    return { exitCode: result.ok ? 0 : 1 };
+  }
+
+  if (["init", "serve", "update"].includes(command)) {
+    io.stderr(`Command unavailable in current scaffold: ${command}`);
     return { exitCode: 1 };
   }
 
-  io.stderr(`Command unavailable in current scaffold: ${command}`);
+  io.stderr(`Unknown command: ${command}`);
+  io.stderr(HELP);
   return { exitCode: 1 };
 }
