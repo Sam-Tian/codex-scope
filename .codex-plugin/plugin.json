@@ -1,0 +1,11 @@
+{
+  "name": "codex-dynamic-architecture",
+  "version": "0.1.0",
+  "description": "Codex plugin for generating a dynamic architecture and progress supervision report for the current repository.",
+  "skills": [
+    {
+      "name": "dynamic-architecture",
+      "path": "skills/dynamic-architecture/SKILL.md"
+    }
+  ]
+}
