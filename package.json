@@ -1,8 +1,17 @@
 {
   "name": "codex-scope",
   "version": "0.1.0",
-  "private": true,
+  "description": "Local Codex skill and CLI for project architecture and progress reports.",
+  "license": "MIT",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Sam-Tian/codex-scope.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Sam-Tian/codex-scope/issues"
+  },
+  "homepage": "https://github.com/Sam-Tian/codex-scope#readme",
   "bin": {
     "codex-scope": "./bin/codex-scope.js"
   },
