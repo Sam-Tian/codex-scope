@@ -144,4 +144,73 @@ describe("runCli", () => {
       await rm(root, { recursive: true, force: true });
     }
   });
+
+  it("rejects serve with a missing or invalid port value", async () => {
+    for (const args of [
+      ["serve", "--port"],
+      ["serve", "--port", "-1"],
+      ["serve", "--port", "65536"],
+      ["serve", "--port", "abc"],
+    ]) {
+      const errors: string[] = [];
+      const result = await runCli(args, {
+        cwd: process.cwd(),
+        stdout: () => undefined,
+        stderr: (line) => errors.push(line),
+      });
+
+      expect(result.exitCode).toBe(1);
+      expect(errors.join("\n")).toContain("Invalid --port");
+    }
+  });
+
+  it("closes the serve command on SIGTERM and removes signal listeners", async () => {
+    const root = await mkdtemp(join(tmpdir(), "codex-arch-cli-serve-"));
+    const beforeSigint = process.listenerCount("SIGINT");
+    const beforeSigterm = process.listenerCount("SIGTERM");
+    try {
+      const answersPath = join(root, "answers.json");
+      await writeFile(
+        answersPath,
+        JSON.stringify({
+          projectId: "demo",
+          projectName: "Demo",
+          goal: "Track architecture",
+          phase: "build",
+          features: [],
+        }),
+        "utf8",
+      );
+      await runCli(["init", "--answers", answersPath], {
+        cwd: root,
+        stdout: () => undefined,
+        stderr: () => undefined,
+      });
+      const output: string[] = [];
+
+      const pending = runCli(["serve", "--port", "0"], {
+        cwd: root,
+        stdout: (line) => output.push(line),
+        stderr: (line) => output.push(line),
+      });
+      await waitFor(() => output.some((line) => line.startsWith("Viewer running:")));
+      process.emit("SIGTERM");
+
+      await expect(pending).resolves.toEqual({ exitCode: 0 });
+      expect(process.listenerCount("SIGINT")).toBe(beforeSigint);
+      expect(process.listenerCount("SIGTERM")).toBe(beforeSigterm);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
 });
+
+async function waitFor(predicate: () => boolean): Promise<void> {
+  const deadline = Date.now() + 2000;
+  while (!predicate()) {
+    if (Date.now() > deadline) {
+      throw new Error("Timed out waiting for condition");
+    }
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+}

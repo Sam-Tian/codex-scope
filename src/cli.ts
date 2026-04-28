@@ -76,14 +76,26 @@ export async function runCli(args: string[], io: CliIO): Promise<CliResult> {
     }
 
     if (command === "serve") {
-      const portValue = valueAfter(args, "--port");
-      const server = await startViewerServer({ cwd: io.cwd, port: portValue ? Number(portValue) : 0 });
+      const port = parseServePort(args);
+      const server = await startViewerServer({ cwd: io.cwd, port });
       io.stdout(`Viewer running: ${server.url}`);
       io.stdout("Press Ctrl+C to stop.");
       return new Promise<CliResult>((resolve) => {
+        let stopping = false;
         const stop = async () => {
-          await server.close();
-          resolve({ exitCode: 0 });
+          if (stopping) {
+            return;
+          }
+          stopping = true;
+          process.off("SIGINT", stop);
+          process.off("SIGTERM", stop);
+          try {
+            await server.close();
+            resolve({ exitCode: 0 });
+          } catch (error) {
+            io.stderr(commandErrorMessage(error));
+            resolve({ exitCode: 1 });
+          }
         };
         process.once("SIGINT", stop);
         process.once("SIGTERM", stop);
@@ -103,6 +115,19 @@ function valueAfter(args: string[], flag: string): string | undefined {
   const index = args.indexOf(flag);
   const value = index >= 0 ? args[index + 1] : undefined;
   return value && !value.startsWith("-") ? value : undefined;
+}
+
+function parseServePort(args: string[]): number {
+  if (!args.includes("--port")) {
+    return 0;
+  }
+  const index = args.indexOf("--port");
+  const value = args[index + 1];
+  const port = Number(value);
+  if (!value || !Number.isInteger(port) || port < 0 || port > 65535) {
+    throw new Error("Invalid --port <0-65535>");
+  }
+  return port;
 }
 
 function commandErrorMessage(error: unknown): string {
