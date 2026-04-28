@@ -86,6 +86,18 @@ describe("runCli", () => {
     expect(errors.join("\n")).toContain("Missing --answers <file>");
   });
 
+  it("rejects init when the answers flag is followed by another flag", async () => {
+    const errors: string[] = [];
+    const result = await runCli(["init", "--answers", "--help"], {
+      cwd: process.cwd(),
+      stdout: () => undefined,
+      stderr: (line) => errors.push(line),
+    });
+
+    expect(result.exitCode).toBe(1);
+    expect(errors.join("\n")).toContain("Missing --answers <file>");
+  });
+
   it("updates status from a Codex summary file", async () => {
     const root = await mkdtemp(join(tmpdir(), "codex-arch-cli-update-"));
     try {

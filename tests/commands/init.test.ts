@@ -49,4 +49,50 @@ describe("runInit", () => {
     const status = await readStatusFile(root);
     expect(status.features[0]?.id).toBe("feature-1");
   });
+
+  it("creates deterministic unique ids for duplicate feature slugs", async () => {
+    await runInit({
+      cwd: root,
+      answers: {
+        projectId: "demo",
+        projectName: "Demo",
+        goal: "Track project architecture",
+        phase: "planning",
+        features: ["API", "api", "API!"],
+      },
+    });
+
+    const status = await readStatusFile(root);
+    expect(status.features.map((feature) => feature.id)).toEqual(["api", "api-2", "api-3"]);
+  });
+
+  it("refuses to overwrite an existing status file", async () => {
+    await runInit({
+      cwd: root,
+      answers: {
+        projectId: "demo",
+        projectName: "Demo",
+        goal: "Track project architecture",
+        phase: "planning",
+        features: ["Authentication"],
+      },
+    });
+
+    await expect(
+      runInit({
+        cwd: root,
+        answers: {
+          projectId: "replacement",
+          projectName: "Replacement",
+          goal: "Replace project state",
+          phase: "planning",
+          features: [],
+        },
+      }),
+    ).rejects.toThrow("status.json already exists");
+
+    const status = await readStatusFile(root);
+    expect(status.project.id).toBe("demo");
+    expect(status.features.map((feature) => feature.name)).toEqual(["Authentication"]);
+  });
 });

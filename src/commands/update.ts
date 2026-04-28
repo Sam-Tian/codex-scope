@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { appendEvent, readStatusFile, writeStatusFile } from "../state/io.js";
-import type { ArchitectureStatus, InterfaceStatus, ModuleStatus, WorkStatus } from "../state/types.js";
+import type { ArchitectureStatus, InterfaceStatus, ModuleKind, ModuleStatus, WorkStatus } from "../state/types.js";
 import { parseJsonObject } from "../utils/json.js";
 
 type Summary = {
@@ -13,7 +13,7 @@ type Summary = {
 
 export async function runUpdate(options: { cwd: string; summaryPath: string }): Promise<ArchitectureStatus> {
   const status = await readStatusFile(options.cwd);
-  const summary = parseJsonObject(await readFile(options.summaryPath, "utf8"), options.summaryPath) as Summary;
+  const summary = validateSummary(parseJsonObject(await readFile(options.summaryPath, "utf8"), options.summaryPath));
   const timestamp = new Date().toISOString();
 
   const next: ArchitectureStatus = {
@@ -38,6 +38,59 @@ export async function runUpdate(options: { cwd: string; summaryPath: string }): 
     riskChanges: [],
   });
   return next;
+}
+
+function validateSummary(value: unknown): Summary {
+  if (!isObject(value)) {
+    throw new Error("Invalid summary: expected object");
+  }
+  if (typeof value.summary !== "string" || value.summary.length === 0) {
+    throw new Error("Invalid summary: summary must be a non-empty string");
+  }
+
+  const featureUpdates = optionalArray(value.featureUpdates, "featureUpdates").map((item, index) => {
+    if (!isObject(item)) {
+      throw new Error(`Invalid summary: featureUpdates[${index}] must be an object`);
+    }
+    const id = requireString(item.id, `featureUpdates[${index}].id`);
+    const status = requireWorkStatus(item.status, `featureUpdates[${index}].status`);
+    const percent = requirePercent(item.percent, `featureUpdates[${index}].percent`);
+    return { id, status, percent };
+  });
+
+  const moduleUpdates = optionalArray(value.moduleUpdates, "moduleUpdates").map((item, index) => {
+    if (!isObject(item)) {
+      throw new Error(`Invalid summary: moduleUpdates[${index}] must be an object`);
+    }
+    return {
+      id: requireString(item.id, `moduleUpdates[${index}].id`),
+      name: requireString(item.name, `moduleUpdates[${index}].name`),
+      kind: requireModuleKind(item.kind, `moduleUpdates[${index}].kind`),
+      status: requireWorkStatus(item.status, `moduleUpdates[${index}].status`),
+      percent: requirePercent(item.percent, `moduleUpdates[${index}].percent`),
+    };
+  });
+
+  const interfaceUpdates = optionalArray(value.interfaceUpdates, "interfaceUpdates").map((item, index) => {
+    if (!isObject(item)) {
+      throw new Error(`Invalid summary: interfaceUpdates[${index}] must be an object`);
+    }
+    return {
+      id: requireString(item.id, `interfaceUpdates[${index}].id`),
+      name: requireString(item.name, `interfaceUpdates[${index}].name`),
+      method: optionalString(item.method, `interfaceUpdates[${index}].method`),
+      path: optionalString(item.path, `interfaceUpdates[${index}].path`),
+      purpose: requireString(item.purpose, `interfaceUpdates[${index}].purpose`),
+    };
+  });
+
+  return {
+    summary: value.summary,
+    featureUpdates,
+    moduleUpdates,
+    interfaceUpdates,
+    verification: optionalStringArray(value.verification, "verification"),
+  };
 }
 
 function upsertModules(existing: ModuleStatus[], updates: NonNullable<Summary["moduleUpdates"]>): ModuleStatus[] {
@@ -78,4 +131,80 @@ function upsertInterfaces(existing: InterfaceStatus[], updates: NonNullable<Summ
     });
   }
   return Array.from(map.values());
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function optionalArray(value: unknown, path: string): unknown[] {
+  if (value === undefined) {
+    return [];
+  }
+  if (!Array.isArray(value)) {
+    throw new Error(`Invalid summary: ${path} must be an array`);
+  }
+  return value;
+}
+
+function requireString(value: unknown, path: string): string {
+  if (typeof value !== "string" || value.length === 0) {
+    throw new Error(`Invalid summary: ${path} must be a non-empty string`);
+  }
+  return value;
+}
+
+function optionalString(value: unknown, path: string): string | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  if (typeof value !== "string") {
+    throw new Error(`Invalid summary: ${path} must be a string`);
+  }
+  return value;
+}
+
+function requireWorkStatus(value: unknown, path: string): WorkStatus {
+  if (
+    value === "not_started" ||
+    value === "in_progress" ||
+    value === "complete" ||
+    value === "blocked" ||
+    value === "unknown"
+  ) {
+    return value;
+  }
+  throw new Error(`Invalid summary: ${path} must be a valid work status`);
+}
+
+function requireModuleKind(value: unknown, path: string): ModuleKind {
+  if (
+    value === "frontend" ||
+    value === "backend" ||
+    value === "worker" ||
+    value === "database" ||
+    value === "external" ||
+    value === "tooling" ||
+    value === "unknown"
+  ) {
+    return value;
+  }
+  throw new Error(`Invalid summary: ${path} must be a valid module kind`);
+}
+
+function requirePercent(value: unknown, path: string): number {
+  if (typeof value !== "number" || value < 0 || value > 100) {
+    throw new Error(`Invalid summary: ${path} must be a number between 0 and 100`);
+  }
+  return value;
+}
+
+function optionalStringArray(value: unknown, path: string): string[] {
+  if (value === undefined) {
+    return [];
+  }
+  if (!Array.isArray(value) || value.some((item) => typeof item !== "string")) {
+    throw new Error(`Invalid summary: ${path} must be a string array`);
+  }
+  return value;
 }

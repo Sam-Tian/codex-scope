@@ -90,7 +90,8 @@ export async function runCli(args: string[], io: CliIO): Promise<CliResult> {
 
 function valueAfter(args: string[], flag: string): string | undefined {
   const index = args.indexOf(flag);
-  return index >= 0 ? args[index + 1] : undefined;
+  const value = index >= 0 ? args[index + 1] : undefined;
+  return value && !value.startsWith("-") ? value : undefined;
 }
 
 function commandErrorMessage(error: unknown): string {

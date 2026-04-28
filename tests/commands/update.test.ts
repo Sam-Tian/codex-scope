@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { access, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -55,8 +55,23 @@ describe("runUpdate", () => {
     expect(status.features[0]?.percent).toBe(70);
     expect(status.modules[0]?.name).toBe("API");
     expect(status.interfaces[0]?.path).toBe("/v1/api-keys");
-    await expect(readFile(join(root, ".codex-architecture", "events.jsonl"), "utf8")).resolves.toContain(
-      "Implemented API key creation",
+    const event = JSON.parse((await readFile(join(root, ".codex-architecture", "events.jsonl"), "utf8")).trim()) as {
+      summary: string;
+      featureIds: string[];
+      moduleIds: string[];
+      interfaceIds: string[];
+      verification: string[];
+      riskChanges: string[];
+    };
+    expect(event).toEqual(
+      expect.objectContaining({
+        summary: "Implemented API key creation",
+        featureIds: ["api-keys"],
+        moduleIds: ["api"],
+        interfaceIds: ["POST:/v1/api-keys"],
+        verification: ["npm test"],
+        riskChanges: [],
+      }),
     );
   });
 
@@ -101,5 +116,17 @@ describe("runUpdate", () => {
     expect(status.interfaces[0]?.method).toBe("POST");
     expect(status.interfaces[0]?.path).toBe("/v1/api-keys");
     expect(status.interfaces[0]?.purpose).toBe("Create API key for dashboard users");
+  });
+
+  it("rejects malformed summaries before writing status or events", async () => {
+    const before = await readStatusFile(root);
+    const summaryPath = join(root, "bad-summary.json");
+    await writeFile(summaryPath, JSON.stringify({ featureUpdates: [{ id: "api-keys", percent: 70 }] }), "utf8");
+
+    await expect(runUpdate({ cwd: root, summaryPath })).rejects.toThrow("summary");
+
+    const after = await readStatusFile(root);
+    expect(after.project.updatedAt).toBe(before.project.updatedAt);
+    await expect(access(join(root, ".codex-architecture", "events.jsonl"))).rejects.toThrow();
   });
 });
