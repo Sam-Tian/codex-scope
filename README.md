@@ -1,0 +1,5 @@
+# Codex Dynamic Architecture Plugin
+
+Codex plugin and local CLI for generating a project-local architecture and progress supervision report.
+
+See `docs/usage.md` for commands.
