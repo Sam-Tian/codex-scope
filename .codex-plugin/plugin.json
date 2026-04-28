@@ -2,10 +2,20 @@
   "name": "codex-dynamic-architecture",
   "version": "0.1.0",
   "description": "Codex plugin for generating a dynamic architecture and progress supervision report for the current repository.",
-  "skills": [
-    {
-      "name": "dynamic-architecture",
-      "path": "skills/dynamic-architecture/SKILL.md"
-    }
-  ]
+  "keywords": ["codex", "architecture", "progress", "supervision"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Dynamic Architecture",
+    "shortDescription": "Generate a live project architecture and progress report.",
+    "longDescription": "Refresh project-local architecture state, scan interface differences, and open a local supervision report for the current repository.",
+    "developerName": "Jarvis",
+    "category": "Productivity",
+    "capabilities": ["Read", "Write", "Interactive"],
+    "defaultPrompt": [
+      "Refresh this repository's architecture report.",
+      "Open the dynamic architecture viewer.",
+      "Update architecture status from this Codex work."
+    ],
+    "brandColor": "#1D4ED8"
+  }
 }

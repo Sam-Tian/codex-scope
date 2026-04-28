@@ -19,11 +19,15 @@ Use this skill when the user asks to inspect project progress, generate a dynami
 
 1. If `.codex-architecture/status.json` is missing, initialize the project:
    - Ask for project name, goal, phase, and core features.
-   - Save answers to a temporary JSON file.
+   - Save answers to a short-lived, redacted temporary JSON file.
    - Run `codex-architecture init --answers <answers-file>`.
-2. Run `codex-architecture refresh`.
-3. If the user wants a clickable report with a working refresh button, run `codex-architecture serve`.
-4. Give the user the report path or local viewer URL.
+   - Run `codex-architecture doctor`.
+2. If `status.json` already exists, run `codex-architecture doctor` before changing or refreshing state.
+3. Run `codex-architecture refresh`.
+4. If the user wants a clickable report with a working refresh button, run `codex-architecture serve`.
+   - Treat the viewer as a task-scoped local server.
+   - Track whether it should be stopped or intentionally left running.
+5. Give the user the report path or local viewer URL.
 
 ## After Codex Development Work
 
@@ -34,8 +38,10 @@ Use this skill when the user asks to inspect project progress, generate a dynami
    - `interfaceUpdates`
    - `verification`
 2. Run `codex-architecture update --from-codex-summary <summary-file>`.
-3. Run `codex-architecture refresh`.
-4. Report what changed and whether any scan findings need confirmation.
+3. Remove short-lived answer or summary files when they are no longer needed.
+4. Run `codex-architecture doctor`.
+5. Run `codex-architecture refresh`.
+6. Report what changed and whether any scan findings need confirmation.
 
 ## Commands
 
