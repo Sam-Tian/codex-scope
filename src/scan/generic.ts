@@ -1,7 +1,8 @@
 import { readdir, readFile, stat } from "node:fs/promises";
 import { join, relative } from "node:path";
+import type { ScanConfig } from "./config.js";
 
-const ignoredDirectoryNames = new Set([
+const defaultIgnoredDirectoryNames = [
   ".codex-architecture",
   ".git",
   ".next",
@@ -13,11 +14,12 @@ const ignoredDirectoryNames = new Set([
   "dist",
   "node_modules",
   "test-results",
-]);
+];
 
-export async function listFiles(root: string): Promise<string[]> {
+export async function listFiles(root: string, config: ScanConfig = { ignoreDirs: [], ignorePathPrefixes: [] }): Promise<string[]> {
   const results: string[] = [];
-  await walk(root, root, results);
+  const ignoredDirectories = new Set([...defaultIgnoredDirectoryNames, ...config.ignoreDirs]);
+  await walk(root, root, results, ignoredDirectories, config.ignorePathPrefixes);
   return results.sort();
 }
 
@@ -42,19 +44,34 @@ export function classifySources(files: string[]): string[] {
   return files.filter((file) => /\.(ts|tsx|js|jsx|mjs|cjs|go|py)$/i.test(file) && !classifyTests([file]).length);
 }
 
-async function walk(root: string, current: string, results: string[]): Promise<void> {
+async function walk(
+  root: string,
+  current: string,
+  results: string[],
+  ignoredDirectories: Set<string>,
+  ignoredPathPrefixes: string[],
+): Promise<void> {
   const entries = await readdir(current, { withFileTypes: true });
   for (const entry of entries) {
-    if (entry.isDirectory() && ignoredDirectoryNames.has(entry.name)) {
+    const absolute = join(current, entry.name);
+    const relativePath = relative(root, absolute);
+    if (isIgnoredPath(relativePath, ignoredPathPrefixes)) {
       continue;
     }
-    const absolute = join(current, entry.name);
+    if (entry.isDirectory() && ignoredDirectories.has(entry.name)) {
+      continue;
+    }
     if (entry.isDirectory()) {
-      await walk(root, absolute, results);
+      await walk(root, absolute, results, ignoredDirectories, ignoredPathPrefixes);
       continue;
     }
     if ((await stat(absolute)).isFile()) {
-      results.push(relative(root, absolute));
+      results.push(relativePath);
     }
   }
+}
+
+function isIgnoredPath(path: string, prefixes: string[]): boolean {
+  const normalized = path.replaceAll("\\", "/");
+  return prefixes.some((prefix) => normalized === prefix.slice(0, -1) || normalized.startsWith(prefix));
 }

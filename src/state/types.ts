@@ -5,6 +5,16 @@ export type EvidenceKind = "code" | "test" | "doc" | "commit" | "scan" | "manual
 export type FindingSeverity = "info" | "warning" | "error";
 export type SourceEvidenceKind = "route" | "openapi" | "script_call" | "doc";
 export type SourceEvidenceConfidence = "high" | "medium" | "low";
+export type ScanFindingKind =
+  | "missing_in_status"
+  | "missing_call_in_status"
+  | "missing_in_code"
+  | "test_mismatch"
+  | "progress_mismatch"
+  | "scan_error";
+export type FindingDecisionValue = "accepted" | "ignored" | "scanner_limit";
+export type FindingDecisionStatus = "active" | "resolved";
+export type FindingTriageStatus = "open" | FindingDecisionValue | "resolved";
 
 export type ArchitectureStatus = {
   schemaVersion: 1;
@@ -16,6 +26,7 @@ export type ArchitectureStatus = {
   risks: RiskStatus[];
   evidence: EvidenceRef[];
   scanFindings: ScanFinding[];
+  findingDecisions?: FindingDecision[];
 };
 
 export type ProjectInfo = {
@@ -93,18 +104,47 @@ export type EvidenceRef = {
 
 export type ScanFinding = {
   id: string;
+  fingerprint?: string;
   severity: FindingSeverity;
-  kind:
-    | "missing_in_status"
-    | "missing_call_in_status"
-    | "missing_in_code"
-    | "test_mismatch"
-    | "progress_mismatch"
-    | "scan_error";
+  kind: ScanFindingKind;
+  triageStatus?: FindingTriageStatus;
   title: string;
   detail: string;
   affectedIds: string[];
   proposedAction: string;
+  evidenceIds: string[];
+  proposedInterface?: ProposedInterfaceDraft;
+  sourceEvidence?: SourceEvidence[];
+};
+
+export type FindingDecision = {
+  id: string;
+  fingerprint: string;
+  decision: FindingDecisionValue;
+  reason: string;
+  status: FindingDecisionStatus;
+  updatedAt: string;
+  lastSeenAt?: string;
+  resolvedAt?: string;
+  title?: string;
+  kind?: ScanFindingKind;
+  severity?: FindingSeverity;
+  affectedIds?: string[];
+  proposedInterface?: ProposedInterfaceDraft;
+  sourceEvidence?: SourceEvidence[];
+};
+
+export type ProposedInterfaceDraft = {
+  id: string;
+  name: string;
+  kind: "http";
+  method?: string;
+  path: string;
+  purpose: string;
+  callerIds: string[];
+  calleeIds: string[];
+  featureIds: string[];
+  testStatus: TestStatus;
   evidenceIds: string[];
   sourceEvidence?: SourceEvidence[];
 };

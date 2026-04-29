@@ -118,6 +118,51 @@ describe("runUpdate", () => {
     expect(status.interfaces[0]?.purpose).toBe("Create API key for dashboard users");
   });
 
+  it("records finding triage decisions from a JSON summary", async () => {
+    const summaryPath = join(root, "triage-summary.json");
+    await writeFile(
+      summaryPath,
+      JSON.stringify({
+        summary: "Triaged scanner findings",
+        findingUpdates: [
+          {
+            id: "missing-in-status:POST:/v1/api-keys",
+            decision: "accepted",
+            reason: "Real API surface that should be added to status",
+          },
+          {
+            id: "missing-call-in-status:POST:/emails",
+            decision: "ignored",
+            reason: "External provider call, not a project interface",
+          },
+        ],
+      }),
+      "utf8",
+    );
+
+    await runUpdate({ cwd: root, summaryPath });
+    const status = await readStatusFile(root);
+
+    expect(status.findingDecisions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "missing-in-status:POST:/v1/api-keys",
+          fingerprint: "missing_in_status:POST:/v1/api-keys",
+          decision: "accepted",
+          reason: "Real API surface that should be added to status",
+          status: "active",
+        }),
+        expect.objectContaining({
+          id: "missing-call-in-status:POST:/emails",
+          fingerprint: "missing_call_in_status:POST:/emails",
+          decision: "ignored",
+          reason: "External provider call, not a project interface",
+          status: "active",
+        }),
+      ]),
+    );
+  });
+
   it("rejects malformed summaries before writing status or events", async () => {
     const before = await readStatusFile(root);
     const summaryPath = join(root, "bad-summary.json");

@@ -9,6 +9,7 @@ For Chinese usage instructions, see [docs/usage.zh-CN.md](docs/usage.zh-CN.md).
 - Initializes project-local architecture state from a short answers file.
 - Updates feature, module, interface, risk, and verification records from redacted Codex summaries.
 - Scans TypeScript and generic repository structure for reportable findings.
+- Lets users triage scan findings as accepted, ignored, scanner limits, or resolved without overwriting confirmed state.
 - Validates the generated state with `doctor`.
 - Renders `.codex-architecture/report.html`.
 - Optionally serves a local clickable viewer with a refresh button.
@@ -106,6 +107,23 @@ codex-scope doctor
 codex-scope refresh
 ```
 
+The summary can also record scan-finding decisions:
+
+```json
+{
+  "summary": "Triaged scanner findings",
+  "findingUpdates": [
+    {
+      "id": "missing-in-status:POST:/v1/api-keys",
+      "decision": "accepted",
+      "reason": "Real API surface that should be added to status"
+    }
+  ]
+}
+```
+
+`refresh` preserves these decisions across scans. Ignored and scanner-limit findings stay visible in the report but do not count as open findings.
+
 ## Generated Files
 
 CodexScope creates and updates:
@@ -134,13 +152,14 @@ npm test
 - TypeScript/Node repository scanning is the current primary path; other stacks receive more generic structure reporting.
 - Generated reports do not replace tests, security review, architecture review, or human judgment.
 - The local viewer is a development convenience, not a production service.
+- Proposed interface drafts are suggestions only; `refresh` never auto-adds them to confirmed `interfaces`.
 
 ## Roadmap
 
 - Broader language and framework scanners.
 - More precise module and interface relationship detection.
 - Safer redaction helpers for generated summaries.
-- Richer report views for long-running projects.
+- Richer report views for long-running projects, including deeper grouping and search.
 - Clearer import/export workflows for teams that want to review generated state.
 
 ## Contributing

@@ -24,6 +24,9 @@ const scanFindingKinds = new Set([
   "progress_mismatch",
   "scan_error",
 ]);
+const findingTriageStatuses = new Set(["open", "accepted", "ignored", "scanner_limit", "resolved"]);
+const findingDecisionValues = new Set(["accepted", "ignored", "scanner_limit"]);
+const findingDecisionStatuses = new Set(["active", "resolved"]);
 const sourceEvidenceKinds = new Set(["route", "openapi", "script_call", "doc"]);
 const sourceEvidenceConfidence = new Set(["high", "medium", "low"]);
 
@@ -112,14 +115,34 @@ export function validateStatus(value: unknown): ValidationResult {
 
   validateArray(status.scanFindings, "scanFindings", errors, (finding, path) => {
     requireString(finding.id, `${path}.id`, errors);
+    requireOptionalString(finding.fingerprint, `${path}.fingerprint`, errors);
     requireEnum(finding.severity, findingSeverities, `${path}.severity`, errors);
     requireEnum(finding.kind, scanFindingKinds, `${path}.kind`, errors);
+    requireOptionalEnum(finding.triageStatus, findingTriageStatuses, `${path}.triageStatus`, errors);
     requireString(finding.title, `${path}.title`, errors);
     requireString(finding.detail, `${path}.detail`, errors);
     requireStringArray(finding.affectedIds, `${path}.affectedIds`, errors);
     requireString(finding.proposedAction, `${path}.proposedAction`, errors);
     requireStringArray(finding.evidenceIds, `${path}.evidenceIds`, errors);
+    validateOptionalProposedInterface(finding.proposedInterface, `${path}.proposedInterface`, errors);
     validateOptionalSourceEvidence(finding.sourceEvidence, `${path}.sourceEvidence`, errors);
+  });
+
+  validateOptionalArray(status.findingDecisions, "findingDecisions", errors, (decision, path) => {
+    requireString(decision.id, `${path}.id`, errors);
+    requireString(decision.fingerprint, `${path}.fingerprint`, errors);
+    requireEnum(decision.decision, findingDecisionValues, `${path}.decision`, errors);
+    requireString(decision.reason, `${path}.reason`, errors);
+    requireEnum(decision.status, findingDecisionStatuses, `${path}.status`, errors);
+    requireString(decision.updatedAt, `${path}.updatedAt`, errors);
+    requireOptionalString(decision.lastSeenAt, `${path}.lastSeenAt`, errors);
+    requireOptionalString(decision.resolvedAt, `${path}.resolvedAt`, errors);
+    requireOptionalString(decision.title, `${path}.title`, errors);
+    requireOptionalEnum(decision.kind, scanFindingKinds, `${path}.kind`, errors);
+    requireOptionalEnum(decision.severity, findingSeverities, `${path}.severity`, errors);
+    requireOptionalStringArray(decision.affectedIds, `${path}.affectedIds`, errors);
+    validateOptionalProposedInterface(decision.proposedInterface, `${path}.proposedInterface`, errors);
+    validateOptionalSourceEvidence(decision.sourceEvidence, `${path}.sourceEvidence`, errors);
   });
 
   return errors.length === 0 ? { ok: true, errors: [] } : { ok: false, errors };
@@ -149,6 +172,40 @@ function validateArray(
   });
 }
 
+function validateOptionalArray(
+  value: unknown,
+  path: string,
+  errors: ValidationError[],
+  validateItem: (item: Record<string, unknown>, path: string) => void,
+): void {
+  if (value === undefined) {
+    return;
+  }
+  validateArray(value, path, errors, validateItem);
+}
+
+function validateOptionalProposedInterface(value: unknown, path: string, errors: ValidationError[]): void {
+  if (value === undefined) {
+    return;
+  }
+  if (!isObject(value)) {
+    errors.push({ path, message: "Expected object" });
+    return;
+  }
+  requireString(value.id, `${path}.id`, errors);
+  requireString(value.name, `${path}.name`, errors);
+  requireEnum(value.kind, new Set(["http"]), `${path}.kind`, errors);
+  requireOptionalString(value.method, `${path}.method`, errors);
+  requireString(value.path, `${path}.path`, errors);
+  requireString(value.purpose, `${path}.purpose`, errors);
+  requireStringArray(value.callerIds, `${path}.callerIds`, errors);
+  requireStringArray(value.calleeIds, `${path}.calleeIds`, errors);
+  requireStringArray(value.featureIds, `${path}.featureIds`, errors);
+  requireEnum(value.testStatus, testStatuses, `${path}.testStatus`, errors);
+  requireStringArray(value.evidenceIds, `${path}.evidenceIds`, errors);
+  validateOptionalSourceEvidence(value.sourceEvidence, `${path}.sourceEvidence`, errors);
+}
+
 function validateOptionalSourceEvidence(value: unknown, path: string, errors: ValidationError[]): void {
   if (value === undefined) {
     return;
@@ -174,6 +231,12 @@ function requireOptionalString(value: unknown, path: string, errors: ValidationE
   }
 }
 
+function requireOptionalStringArray(value: unknown, path: string, errors: ValidationError[]): void {
+  if (value !== undefined) {
+    requireStringArray(value, path, errors);
+  }
+}
+
 function requireOptionalPositiveFiniteNumber(value: unknown, path: string, errors: ValidationError[]): void {
   if (value !== undefined && (typeof value !== "number" || !Number.isFinite(value) || value <= 0)) {
     errors.push({ path, message: "Expected positive finite number" });
@@ -189,6 +252,12 @@ function requireStringArray(value: unknown, path: string, errors: ValidationErro
 function requireEnum(value: unknown, allowed: Set<string>, path: string, errors: ValidationError[]): void {
   if (typeof value !== "string" || !allowed.has(value)) {
     errors.push({ path, message: `Expected one of: ${Array.from(allowed).join(", ")}` });
+  }
+}
+
+function requireOptionalEnum(value: unknown, allowed: Set<string>, path: string, errors: ValidationError[]): void {
+  if (value !== undefined) {
+    requireEnum(value, allowed, path, errors);
   }
 }
 

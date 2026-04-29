@@ -57,10 +57,74 @@ describe("createScanFindings", () => {
         kind: "missing_in_status",
         severity: "warning",
         title: "Scanned interface is not recorded: POST /v1/new",
+        triageStatus: "open",
+        proposedInterface: expect.objectContaining({
+          id: "POST:/v1/new",
+          kind: "http",
+          method: "POST",
+          path: "/v1/new",
+          name: "POST /v1/new",
+          purpose: "Confirm and document POST /v1/new.",
+          testStatus: "unknown",
+        }),
         proposedAction:
           "Confirm whether POST /v1/new belongs in status.json, then add it with purpose, callers, callees, feature ownership, and test status.",
       }),
     ]);
+  });
+
+  it("prioritizes multi-source route evidence for proposed interfaces", () => {
+    const multiEvidenceScan: ScanResult = {
+      ...scan,
+      interfaces: [
+        {
+          id: "GET:/api/applications",
+          method: "GET",
+          path: "/api/applications",
+          sourcePath: "apps/api/src/applications.controller.ts",
+          confidence: "high",
+          evidence: [
+            {
+              kind: "route",
+              method: "GET",
+              path: "/api/applications",
+              sourcePath: "apps/api/src/applications.controller.ts",
+              confidence: "high",
+            },
+            {
+              kind: "openapi",
+              method: "GET",
+              path: "/api/applications",
+              sourcePath: "openapi.yaml",
+              confidence: "high",
+            },
+            {
+              kind: "script_call",
+              method: "GET",
+              path: "/api/applications",
+              sourcePath: "scripts/smoke.mjs",
+              confidence: "medium",
+            },
+          ],
+        },
+      ],
+      evidence: [],
+      calls: [],
+    };
+
+    expect(createScanFindings(status, multiEvidenceScan)[0]).toEqual(
+      expect.objectContaining({
+        severity: "warning",
+        proposedInterface: expect.objectContaining({
+          id: "GET:/api/applications",
+          sourceEvidence: expect.arrayContaining([
+            expect.objectContaining({ kind: "route" }),
+            expect.objectContaining({ kind: "openapi" }),
+            expect.objectContaining({ kind: "script_call" }),
+          ]),
+        }),
+      }),
+    );
   });
 
   it("proposes removing confirmed routes missing from scan", () => {

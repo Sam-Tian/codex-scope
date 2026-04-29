@@ -83,13 +83,28 @@ const status: ArchitectureStatus = {
   scanFindings: [
     {
       id: "missing-in-status:POST:/v1/new",
+      fingerprint: "missing_in_status:POST:/v1/new",
       severity: "warning",
       kind: "missing_in_status",
+      triageStatus: "open",
       title: "Scanned interface is not recorded: POST /v1/new",
       detail: "Scanner found POST /v1/new in src/routes.ts.",
       affectedIds: ["POST:/v1/new"],
       proposedAction: "Confirm whether POST /v1/new belongs in status.json.",
       evidenceIds: [],
+      proposedInterface: {
+        id: "POST:/v1/new",
+        name: "POST /v1/new",
+        kind: "http",
+        method: "POST",
+        path: "/v1/new",
+        purpose: "Confirm and document POST /v1/new.",
+        callerIds: [],
+        calleeIds: [],
+        featureIds: [],
+        testStatus: "unknown",
+        evidenceIds: [],
+      },
       sourceEvidence: [
         {
           kind: "script_call",
@@ -99,6 +114,21 @@ const status: ArchitectureStatus = {
           confidence: "medium",
         },
       ],
+    },
+  ],
+  findingDecisions: [
+    {
+      id: "missing-in-status:POST:/v1/old",
+      fingerprint: "missing_in_status:POST:/v1/old",
+      decision: "ignored",
+      reason: "No longer present",
+      status: "resolved",
+      updatedAt: "2026-04-28T00:00:00.000Z",
+      resolvedAt: "2026-04-29T00:00:00.000Z",
+      title: "Scanned interface is not recorded: POST /v1/old",
+      kind: "missing_in_status",
+      severity: "warning",
+      affectedIds: ["POST:/v1/old"],
     },
   ],
 };
@@ -133,6 +163,22 @@ describe("renderReportHtml", () => {
     expect(html).toContain(">中文<");
     expect(html).toContain("项目监督视图");
     expect(html).toContain("源代码证据");
+  });
+
+  it("renders finding triage filters, resolved decisions, and copyable update summary snippets", () => {
+    const html = renderReportHtml(status, {
+      progress: { percent: 70, basis: "equal", featureCount: 1, weights: [] },
+      servedMode: false,
+    });
+
+    expect(html).toContain("data-triage-filter=\"open\"");
+    expect(html).toContain("data-triage-filter=\"ignored\"");
+    expect(html).toContain("data-triage-filter=\"scanner_limit\"");
+    expect(html).toContain("data-triage-filter=\"resolved\"");
+    expect(html).toContain("data-decision-id=\"missing-in-status:POST:/v1/old\"");
+    expect(html).toContain("POST /v1/new");
+    expect(html).toContain("findingUpdates");
+    expect(html).toContain("可复制的更新摘要");
   });
 
   it("updates the details panel when rendered items are clicked", async () => {

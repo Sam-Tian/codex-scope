@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm, symlink } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -92,5 +92,101 @@ describe("runRefresh", () => {
       }),
     ]);
     expect(nextStatus.scanFindings.some((finding) => finding.kind === "missing_in_code")).toBe(false);
+  });
+
+  it("keeps ignored finding decisions across refresh and excludes them from the open count", async () => {
+    const status: ArchitectureStatus = {
+      schemaVersion: 1,
+      project: {
+        id: "demo",
+        name: "Demo",
+        goal: "Demo",
+        phase: "build",
+        sourcePath: root,
+        updatedAt: "2026-04-28T00:00:00.000Z",
+      },
+      features: [],
+      modules: [],
+      interfaces: [],
+      flows: [],
+      risks: [],
+      evidence: [],
+      scanFindings: [],
+      findingDecisions: [
+        {
+          id: "missing-in-status:POST:/v1/new",
+          fingerprint: "missing_in_status:POST:/v1/new",
+          decision: "ignored",
+          reason: "Test fixture endpoint",
+          status: "active",
+          updatedAt: "2026-04-28T00:00:00.000Z",
+        },
+      ],
+    };
+    await writeStatusFile(root, status);
+    await mkdir(join(root, "src"), { recursive: true });
+    await writeFile(join(root, "src", "routes.ts"), 'app.post("/v1/new", handler);\n', "utf8");
+
+    const result = await runRefresh({ cwd: root, servedMode: false });
+    const nextStatus = JSON.parse(await readFile(join(root, ".codex-architecture/status.json"), "utf8")) as ArchitectureStatus;
+
+    expect(result.findingCount).toBe(0);
+    expect(nextStatus.scanFindings[0]).toEqual(
+      expect.objectContaining({
+        id: "missing-in-status:POST:/v1/new",
+        triageStatus: "ignored",
+      }),
+    );
+    expect(nextStatus.findingDecisions?.[0]).toEqual(
+      expect.objectContaining({
+        decision: "ignored",
+        status: "active",
+      }),
+    );
+    expect(nextStatus.findingDecisions?.[0]?.resolvedAt).toBeUndefined();
+  });
+
+  it("marks stale finding decisions as resolved when the finding disappears", async () => {
+    const status: ArchitectureStatus = {
+      schemaVersion: 1,
+      project: {
+        id: "demo",
+        name: "Demo",
+        goal: "Demo",
+        phase: "build",
+        sourcePath: root,
+        updatedAt: "2026-04-28T00:00:00.000Z",
+      },
+      features: [],
+      modules: [],
+      interfaces: [],
+      flows: [],
+      risks: [],
+      evidence: [],
+      scanFindings: [],
+      findingDecisions: [
+        {
+          id: "missing-in-status:POST:/v1/old",
+          fingerprint: "missing_in_status:POST:/v1/old",
+          decision: "accepted",
+          reason: "Was confirmed in a previous scan",
+          status: "active",
+          updatedAt: "2026-04-28T00:00:00.000Z",
+        },
+      ],
+    };
+    await writeStatusFile(root, status);
+
+    await runRefresh({ cwd: root, servedMode: false });
+    const nextStatus = JSON.parse(await readFile(join(root, ".codex-architecture/status.json"), "utf8")) as ArchitectureStatus;
+
+    expect(nextStatus.scanFindings).toEqual([]);
+    expect(nextStatus.findingDecisions?.[0]).toEqual(
+      expect.objectContaining({
+        decision: "accepted",
+        status: "resolved",
+        resolvedAt: expect.any(String),
+      }),
+    );
   });
 });

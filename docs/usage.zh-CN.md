@@ -137,6 +137,62 @@ Scanned interface is not recorded: GET /v1/example
 
 这通常表示需要确认该接口是否属于项目状态，再补充接口用途、调用方、被调用方、所属功能和测试状态。
 
+## 分诊扫描发现
+
+`codex-scope refresh` 的扫描发现仍然是建议项，不会自动覆盖你确认过的项目状态。v0.2 开始，每条发现会有一个分诊状态：
+
+- `open`：还需要确认。
+- `accepted`：这条发现是真实项目状态，应该补进 `status.json`。
+- `ignored`：这条发现不属于项目架构记录，可以保留为已忽略。
+- `scanner_limit`：这是扫描器能力限制，不代表项目真的漂移。
+- `resolved`：之前分诊过的发现，在最新扫描中已经消失。
+
+可以在同一个脱敏 `summary.json` 中用 `findingUpdates` 记录分诊结果：
+
+```json
+{
+  "summary": "Triaged scanner findings",
+  "findingUpdates": [
+    {
+      "id": "missing-in-status:POST:/v1/api-keys",
+      "decision": "accepted",
+      "reason": "Real API surface that should be added to status"
+    },
+    {
+      "id": "missing-call-in-status:POST:/emails",
+      "decision": "ignored",
+      "reason": "External provider call, not a project-owned interface"
+    }
+  ]
+}
+```
+
+执行：
+
+```bash
+codex-scope update --from-codex-summary summary.json
+codex-scope refresh
+```
+
+已忽略和扫描器限制类发现仍可在报告里查看，但不会计入默认开放发现数。
+
+对于 `missing_in_status` 中来自 route 或 OpenAPI 的真实接口，报告会展示一个建议登记接口草稿。它只是复制和确认的起点，不会在 `refresh` 时自动写入 `interfaces`。
+
+## 配置扫描忽略路径
+
+如果项目里有生成目录、旧代码目录或 fixture 不应该参与扫描，可以创建 `.codex-architecture/config.json`：
+
+```json
+{
+  "scan": {
+    "ignoreDirs": ["fixtures"],
+    "ignorePathPrefixes": ["apps/legacy-api/"]
+  }
+}
+```
+
+这些配置是追加规则。CodexScope 默认仍会忽略 `.worktrees`、`.turbo`、`.pnpm-store`、`test-results`、`.codex-architecture`、`coverage`、`.next`、`build`、`dist`、`node_modules`、`.git` 等常见生成或依赖目录。
+
 ## 安全边界
 
 不要把以下内容写入 `answers.json`、`summary.json`、`.codex-architecture/` 或 Basic Memory：

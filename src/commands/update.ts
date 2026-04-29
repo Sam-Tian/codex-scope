@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { upsertFindingDecisions, type FindingUpdate } from "../findings/triage.js";
 import { appendEvent, readStatusFile, writeStatusFile } from "../state/io.js";
 import type { ArchitectureStatus, InterfaceStatus, ModuleKind, ModuleStatus, WorkStatus } from "../state/types.js";
 import { parseJsonObject } from "../utils/json.js";
@@ -8,6 +9,7 @@ type Summary = {
   featureUpdates?: Array<{ id: string; status: WorkStatus; percent: number }>;
   moduleUpdates?: Array<{ id: string; name: string; kind: ModuleStatus["kind"]; status: WorkStatus; percent: number }>;
   interfaceUpdates?: Array<{ id: string; name: string; method?: string; path?: string; purpose: string }>;
+  findingUpdates?: FindingUpdate[];
   verification?: string[];
 };
 
@@ -25,6 +27,12 @@ export async function runUpdate(options: { cwd: string; summaryPath: string }): 
     }),
     modules: upsertModules(status.modules, summary.moduleUpdates ?? []),
     interfaces: upsertInterfaces(status.interfaces, summary.interfaceUpdates ?? []),
+    findingDecisions: upsertFindingDecisions(
+      status.findingDecisions,
+      summary.findingUpdates ?? [],
+      status.scanFindings,
+      timestamp,
+    ),
   };
 
   await writeStatusFile(options.cwd, next);
@@ -84,11 +92,23 @@ function validateSummary(value: unknown): Summary {
     };
   });
 
+  const findingUpdates = optionalArray(value.findingUpdates, "findingUpdates").map((item, index) => {
+    if (!isObject(item)) {
+      throw new Error(`Invalid summary: findingUpdates[${index}] must be an object`);
+    }
+    return {
+      id: requireString(item.id, `findingUpdates[${index}].id`),
+      decision: requireFindingDecision(item.decision, `findingUpdates[${index}].decision`),
+      reason: requireString(item.reason, `findingUpdates[${index}].reason`),
+    };
+  });
+
   return {
     summary: value.summary,
     featureUpdates,
     moduleUpdates,
     interfaceUpdates,
+    findingUpdates,
     verification: optionalStringArray(value.verification, "verification"),
   };
 }
@@ -190,6 +210,13 @@ function requireModuleKind(value: unknown, path: string): ModuleKind {
     return value;
   }
   throw new Error(`Invalid summary: ${path} must be a valid module kind`);
+}
+
+function requireFindingDecision(value: unknown, path: string): FindingUpdate["decision"] {
+  if (value === "accepted" || value === "ignored" || value === "scanner_limit") {
+    return value;
+  }
+  throw new Error(`Invalid summary: ${path} must be accepted, ignored, or scanner_limit`);
 }
 
 function requirePercent(value: unknown, path: string): number {

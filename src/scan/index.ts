@@ -1,4 +1,5 @@
 import { classifyDocs, classifySources, classifyTests, listFiles, readPackageName } from "./generic.js";
+import { readScanConfig } from "./config.js";
 import { scanDocReferences } from "./docs.js";
 import { scanGoRoutes } from "./go.js";
 import { scanOpenApiRoutes } from "./openapi.js";
@@ -8,7 +9,8 @@ import type { ScannedCall, ScannedInterface, ScanResult } from "./types.js";
 
 export async function scanRepository(root: string): Promise<ScanResult> {
   try {
-    const files = await listFiles(root);
+    const config = await readScanConfig(root);
+    const files = await listFiles(root, config);
     const docs = classifyDocs(files);
     const sourceFiles = classifySources(files);
     const nodeScan = await scanTypeScriptNode(root, sourceFiles);

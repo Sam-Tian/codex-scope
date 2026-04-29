@@ -1,5 +1,6 @@
 import { writeFile } from "node:fs/promises";
 import { createScanFindings, sourceEvidenceForInterface } from "../findings/diff.js";
+import { applyFindingDecisions, countOpenFindings } from "../findings/triage.js";
 import { renderReportHtml } from "../render/report.js";
 import { scanRepository } from "../scan/index.js";
 import { readStatusFile, writeStatusFile } from "../state/io.js";
@@ -20,19 +21,22 @@ export type RefreshResult = {
 export async function runRefresh(options: RefreshOptions): Promise<RefreshResult> {
   const status = await readStatusFile(options.cwd);
   const scan = await scanRepository(options.cwd);
+  const timestamp = new Date().toISOString();
   const findings =
     scan.errors.length > 0
       ? createScanFindings({ ...status, interfaces: [] }, { ...scan, interfaces: [] })
       : createScanFindings(status, scan);
+  const triaged = applyFindingDecisions(findings, status.findingDecisions, timestamp);
   const nextStatus = {
     ...status,
     project: {
       ...status.project,
       sourcePath: options.cwd,
-      updatedAt: new Date().toISOString(),
+      updatedAt: timestamp,
     },
     interfaces: scan.errors.length > 0 ? status.interfaces : attachSourceEvidence(status.interfaces, scan),
-    scanFindings: findings,
+    scanFindings: triaged.findings,
+    findingDecisions: triaged.decisions.length > 0 ? triaged.decisions : status.findingDecisions,
   };
   await writeStatusFile(options.cwd, nextStatus);
 
@@ -46,7 +50,7 @@ export async function runRefresh(options: RefreshOptions): Promise<RefreshResult
     "utf8",
   );
 
-  return { reportPath, findingCount: findings.length };
+  return { reportPath, findingCount: countOpenFindings(triaged.findings) };
 }
 
 function attachSourceEvidence(interfaces: InterfaceStatus[], scan: Awaited<ReturnType<typeof scanRepository>>): InterfaceStatus[] {

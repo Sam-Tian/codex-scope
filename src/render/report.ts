@@ -1,6 +1,7 @@
 import type { ProjectProgress } from "../state/progress.js";
 import type {
   ArchitectureStatus,
+  FindingDecision,
   FlowStatus,
   InterfaceStatus,
   ModuleStatus,
@@ -21,7 +22,13 @@ export function renderReportHtml(status: ArchitectureStatus, options: RenderRepo
   const featureCards = status.features.map(renderFeatureCard).join("\n");
   const flowRows = status.flows.map(renderFlowRow).join("\n");
   const interfaceRows = status.interfaces.map(renderInterfaceRow).join("\n");
-  const findingRows = status.scanFindings.map(renderFindingRow).join("\n");
+  const openFindingCount = status.scanFindings.filter((finding) => findingTriageStatus(finding) === "open").length;
+  const resolvedDecisionRows = (status.findingDecisions ?? [])
+    .filter((decision) => decision.status === "resolved")
+    .map(renderDecisionRow)
+    .join("\n");
+  const resolvedDecisionCount = (status.findingDecisions ?? []).filter((decision) => decision.status === "resolved").length;
+  const findingRows = `${renderFindingGroups(status.scanFindings)}${resolvedDecisionRows}`;
   const riskRows = status.risks.map(renderRiskRow).join("\n");
   const refreshMode = options.servedMode ? "served" : "static";
   const progressDegrees = Math.max(0, Math.min(100, options.progress.percent)) * 3.6;
@@ -54,7 +61,7 @@ export function renderReportHtml(status: ArchitectureStatus, options: RenderRepo
       <dt data-i18n="statsFeatures">Features</dt><dd>${status.features.length}</dd>
       <dt data-i18n="statsModules">Modules</dt><dd>${status.modules.length}</dd>
       <dt data-i18n="statsInterfaces">Interfaces</dt><dd>${status.interfaces.length}</dd>
-      <dt data-i18n="statsFindings">Findings</dt><dd>${status.scanFindings.length}</dd>
+      <dt data-i18n="statsFindings">Open Findings</dt><dd>${openFindingCount}</dd>
     </dl>
     <div class="legend" aria-label="Status legend">
       <span><i class="dot complete"></i><b data-i18n="legendComplete">complete or stable</b></span>
@@ -108,8 +115,9 @@ export function renderReportHtml(status: ArchitectureStatus, options: RenderRepo
       <div>
         <div class="section-title">
           <h3 data-i18n="risksHeading">Risks And Findings</h3>
-          <span data-i18n="risksCount" data-count="${status.risks.length + status.scanFindings.length}">${status.risks.length + status.scanFindings.length} items</span>
+          <span data-i18n="risksCount" data-count="${status.risks.length + status.scanFindings.length + resolvedDecisionCount}">${status.risks.length + status.scanFindings.length + resolvedDecisionCount} items</span>
         </div>
+        ${renderTriageFilters(status)}
         <div class="stack">${findingRows}${riskRows || (findingRows ? "" : emptyState("No risks or scan findings."))}</div>
       </div>
     </section>
@@ -156,11 +164,59 @@ function renderInterfaceRow(item: InterfaceStatus): string {
 }
 
 function renderFindingRow(finding: ScanFinding): string {
-  return `<button class="list-row ${severityToClass(finding.severity)}" type="button" data-finding-id="${escapeHtml(finding.id)}">
+  const triage = findingTriageStatus(finding);
+  return `<button class="list-row ${severityToClass(finding.severity)}${triage === "open" ? "" : " hidden"}" type="button" data-finding-id="${escapeHtml(finding.id)}" data-triage-status="${escapeHtml(triage)}">
     <strong>${escapeHtml(finding.title)}</strong>
     ${renderSourceBadges(finding.sourceEvidence)}
-    <span>${escapeHtml(finding.kind)}</span>
+    <span>${escapeHtml(triageLabel(triage))} / ${escapeHtml(finding.kind)} / ${escapeHtml(findingGroupLabel(finding))}</span>
   </button>`;
+}
+
+function renderDecisionRow(decision: FindingDecision): string {
+  const title = decision.title ?? decision.id;
+  return `<button class="list-row unknown hidden" type="button" data-decision-id="${escapeHtml(decision.id)}" data-triage-status="resolved">
+    <strong>${escapeHtml(title)}</strong>
+    ${renderSourceBadges(decision.sourceEvidence)}
+    <span>${escapeHtml(triageLabel("resolved"))} / ${escapeHtml(decision.decision)} / ${escapeHtml(decision.reason)}</span>
+  </button>`;
+}
+
+function renderFindingGroups(findings: ScanFinding[]): string {
+  const groups = new Map<string, ScanFinding[]>();
+  for (const finding of findings) {
+    const key = `${finding.kind} / ${findingGroupLabel(finding)}`;
+    groups.set(key, [...(groups.get(key) ?? []), finding]);
+  }
+  return Array.from(groups.entries())
+    .map(
+      ([label, items]) =>
+        `<div class="finding-group" data-finding-group="${escapeHtml(label)}"><p>${escapeHtml(label)} · ${items.length}</p>${items
+          .map(renderFindingRow)
+          .join("\n")}</div>`,
+    )
+    .join("\n");
+}
+
+function renderTriageFilters(status: ArchitectureStatus): string {
+  const counts = new Map<string, number>([
+    ["open", 0],
+    ["accepted", 0],
+    ["ignored", 0],
+    ["scanner_limit", 0],
+    ["resolved", (status.findingDecisions ?? []).filter((decision) => decision.status === "resolved").length],
+  ]);
+  for (const finding of status.scanFindings) {
+    const triage = findingTriageStatus(finding);
+    counts.set(triage, (counts.get(triage) ?? 0) + 1);
+  }
+  return `<div class="triage-filters" aria-label="Finding triage filters">
+    ${["open", "accepted", "ignored", "scanner_limit", "resolved"]
+      .map(
+        (triage) =>
+          `<button class="triage-filter${triage === "open" ? " active" : ""}" type="button" data-triage-filter="${escapeHtml(triage)}">${escapeHtml(triageLabel(triage))} ${counts.get(triage) ?? 0}</button>`,
+      )
+      .join("")}
+  </div>`;
 }
 
 function renderRiskRow(risk: RiskStatus): string {
@@ -195,6 +251,37 @@ function sourceKindLabel(kind: SourceEvidence["kind"]): string {
     return "Docs";
   }
   return "Route";
+}
+
+function findingTriageStatus(finding: ScanFinding): string {
+  return finding.triageStatus ?? "open";
+}
+
+function triageLabel(triage: string): string {
+  if (triage === "accepted") {
+    return "Accepted";
+  }
+  if (triage === "ignored") {
+    return "Ignored";
+  }
+  if (triage === "scanner_limit") {
+    return "Scanner limit";
+  }
+  if (triage === "resolved") {
+    return "Resolved";
+  }
+  return "Open";
+}
+
+function findingGroupLabel(finding: ScanFinding): string {
+  const firstSource = finding.sourceEvidence?.[0]?.sourcePath;
+  if (firstSource) {
+    return firstSource.split("/").slice(0, 3).join("/");
+  }
+  const affected = finding.affectedIds[0] ?? "";
+  const path = affected.split(":").slice(1).join(":");
+  const prefix = path.split("/").filter(Boolean).slice(0, 2).join("/");
+  return prefix ? `/${prefix}` : "unknown source";
 }
 
 function interfaceLabel(item: InterfaceStatus): string {
@@ -266,6 +353,12 @@ h3{font-size:15px}
 .badge{display:inline-block;border:1px solid var(--line);border-radius:999px;background:#fff;padding:2px 7px;color:var(--blue);font-size:11px;font-style:normal;font-weight:800}
 .split{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 .stack{display:grid;gap:8px}
+.triage-filters{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 10px}
+.triage-filter{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:5px 9px;cursor:pointer;color:var(--muted);font-size:12px}
+.triage-filter.active{border-color:var(--blue);color:var(--blue);font-weight:800}
+.finding-group{display:grid;gap:8px}
+.finding-group p{margin:8px 0 0;color:var(--muted);font-size:12px;font-weight:800}
+.snippet{white-space:pre-wrap;border:1px solid var(--line);border-radius:8px;background:#f8fafc;padding:10px;font-size:12px;overflow:auto}
 .complete{border-color:var(--green);background:var(--green-bg)}
 .in-progress{border-color:var(--amber);background:var(--amber-bg)}
 .blocked{border-color:var(--red);background:var(--red-bg)}
@@ -297,7 +390,7 @@ function clientScript(): string {
       statsFeatures: "Features",
       statsModules: "Modules",
       statsInterfaces: "Interfaces",
-      statsFindings: "Findings",
+      statsFindings: "Open Findings",
       legendComplete: "complete or stable",
       legendProgress: "in progress or needs verification",
       legendBlocked: "blocked or conflicting",
@@ -339,6 +432,10 @@ function clientScript(): string {
       callers: "Callers",
       callees: "Callees",
       sourceEvidence: "Source Evidence",
+      triage: "Triage",
+      proposedInterface: "Proposed Interface",
+      updateSummary: "Copyable update summary",
+      resolvedDecision: "Resolved finding decision",
       severity: "Severity",
       proposal: "Proposal",
       affected: "Affected",
@@ -346,6 +443,11 @@ function clientScript(): string {
       openapi: "OpenAPI",
       script_call: "Smoke",
       doc: "Docs",
+      open: "Open",
+      accepted: "Accepted",
+      ignored: "Ignored",
+      scanner_limit: "Scanner limit",
+      resolved: "Resolved",
     },
     zh: {
       topology: "架构拓扑",
@@ -354,7 +456,7 @@ function clientScript(): string {
       statsFeatures: "功能",
       statsModules: "模块",
       statsInterfaces: "接口",
-      statsFindings: "发现项",
+      statsFindings: "开放发现项",
       legendComplete: "已完成或稳定",
       legendProgress: "进行中或需要验证",
       legendBlocked: "阻塞或冲突",
@@ -396,6 +498,10 @@ function clientScript(): string {
       callers: "调用方",
       callees: "被调用方",
       sourceEvidence: "源代码证据",
+      triage: "分诊",
+      proposedInterface: "建议登记接口",
+      updateSummary: "可复制的更新摘要",
+      resolvedDecision: "已解决的发现项决策",
       severity: "严重性",
       proposal: "建议",
       affected: "影响范围",
@@ -403,6 +509,11 @@ function clientScript(): string {
       openapi: "OpenAPI",
       script_call: "冒烟脚本",
       doc: "文档",
+      open: "开放",
+      accepted: "已确认",
+      ignored: "已忽略",
+      scanner_limit: "扫描器限制",
+      resolved: "已解决",
     },
   };
   const t = (key) => messages[currentLanguage][key] || messages.en[key] || key;
@@ -445,6 +556,10 @@ function clientScript(): string {
   const esc = (value) => String(value ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#39;");
   const list = (values) => values && values.length ? "<ul>" + values.map((value) => "<li>" + esc(value) + "</li>").join("") + "</ul>" : "<p class=\\"empty\\">" + esc(t("none")) + "</p>";
   const sourceEvidence = (items) => items && items.length ? "<ul>" + items.map((item) => "<li><strong>" + esc(sourceLabel(item.kind)) + "</strong> " + esc((item.method || "ANY") + " " + item.path) + " - " + esc(item.sourcePath) + " (" + esc(item.confidence) + ")</li>").join("") + "</ul>" : "<p class=\\"empty\\">" + esc(t("none")) + "</p>";
+  const triageLabel = (value) => t(value || "open");
+  const proposedInterface = (item) => item ? "<dl><dt>ID</dt><dd>" + esc(item.id) + "</dd><dt>" + esc(t("kind")) + "</dt><dd>" + esc(item.kind) + "</dd><dt>" + esc(t("test")) + "</dt><dd>" + esc(item.testStatus) + "</dd></dl><p>" + esc(item.purpose) + "</p>" + sourceEvidence(item.sourceEvidence) : "<p class=\\"empty\\">" + esc(t("none")) + "</p>";
+  const updateSummary = (finding, decision) => JSON.stringify({ summary: "Triaged scanner finding", findingUpdates: [{ id: finding.id, decision, reason: "Replace with a short redacted reason." }] }, null, 2);
+  const updateSnippet = (finding) => "<pre class=\\"snippet\\">" + esc(updateSummary(finding, finding.triageStatus === "open" ? "accepted" : finding.triageStatus)) + "</pre>";
   const setDetails = (title, body) => { details.innerHTML = "<p class=\\"eyebrow\\">" + esc(t("details")) + "</p><h2>" + esc(title) + "</h2>" + body; };
   const findById = (items, id) => items.find((item) => item.id === id);
 
@@ -485,7 +600,26 @@ function clientScript(): string {
     button.addEventListener("click", () => {
       const finding = findById(status.scanFindings, button.dataset.findingId);
       if (!finding) return setDetails(t("missingFinding"), "<p>" + esc(t("findingNotFound")) + "</p>");
-      setDetails(finding.title, "<p>" + esc(finding.detail) + "</p><dl><dt>" + esc(t("severity")) + "</dt><dd>" + esc(finding.severity) + "</dd><dt>" + esc(t("kind")) + "</dt><dd>" + esc(finding.kind) + "</dd></dl><h3>" + esc(t("proposal")) + "</h3><p>" + esc(finding.proposedAction) + "</p><h3>" + esc(t("affected")) + "</h3>" + list(finding.affectedIds) + "<h3>" + esc(t("sourceEvidence")) + "</h3>" + sourceEvidence(finding.sourceEvidence));
+      setDetails(finding.title, "<p>" + esc(finding.detail) + "</p><dl><dt>" + esc(t("severity")) + "</dt><dd>" + esc(finding.severity) + "</dd><dt>" + esc(t("kind")) + "</dt><dd>" + esc(finding.kind) + "</dd><dt>" + esc(t("triage")) + "</dt><dd>" + esc(triageLabel(finding.triageStatus)) + "</dd></dl><h3>" + esc(t("proposal")) + "</h3><p>" + esc(finding.proposedAction) + "</p><h3>" + esc(t("affected")) + "</h3>" + list(finding.affectedIds) + "<h3>" + esc(t("sourceEvidence")) + "</h3>" + sourceEvidence(finding.sourceEvidence) + "<h3>" + esc(t("proposedInterface")) + "</h3>" + proposedInterface(finding.proposedInterface) + "<h3>" + esc(t("updateSummary")) + "</h3>" + updateSnippet(finding));
+    });
+  });
+
+  document.querySelectorAll("[data-decision-id]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const decision = findById(status.findingDecisions || [], button.dataset.decisionId);
+      if (!decision) return setDetails(t("missingFinding"), "<p>" + esc(t("findingNotFound")) + "</p>");
+      setDetails(decision.title || decision.id, "<p>" + esc(decision.reason) + "</p><dl><dt>" + esc(t("triage")) + "</dt><dd>" + esc(triageLabel(decision.status)) + "</dd><dt>" + esc(t("status")) + "</dt><dd>" + esc(decision.decision) + "</dd></dl><h3>" + esc(t("affected")) + "</h3>" + list(decision.affectedIds) + "<h3>" + esc(t("sourceEvidence")) + "</h3>" + sourceEvidence(decision.sourceEvidence));
+    });
+  });
+
+  document.querySelectorAll("[data-triage-filter]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const filter = button.dataset.triageFilter;
+      document.querySelectorAll("[data-triage-filter]").forEach((item) => item.classList.remove("active"));
+      button.classList.add("active");
+      document.querySelectorAll("[data-triage-status]").forEach((item) => {
+        item.classList.toggle("hidden", item.dataset.triageStatus !== filter);
+      });
     });
   });
 

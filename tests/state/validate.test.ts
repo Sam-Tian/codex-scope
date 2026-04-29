@@ -88,6 +88,51 @@ describe("validateStatus", () => {
     expect(validateStatus(validStatus)).toEqual({ ok: true, errors: [] });
   });
 
+  it("accepts optional finding triage fields and proposed interface drafts", () => {
+    const triagedStatus: ArchitectureStatus = {
+      ...validStatus,
+      scanFindings: [
+        {
+          id: "missing-in-status:POST:/v1/api-keys",
+          fingerprint: "missing_in_status:POST:/v1/api-keys",
+          severity: "warning",
+          kind: "missing_in_status",
+          triageStatus: "accepted",
+          title: "Scanned interface is not recorded: POST /v1/api-keys",
+          detail: "Scanner found POST /v1/api-keys in src/routes.ts.",
+          affectedIds: ["POST:/v1/api-keys"],
+          proposedAction: "Confirm and add this interface.",
+          evidenceIds: [],
+          proposedInterface: {
+            id: "POST:/v1/api-keys",
+            name: "POST /v1/api-keys",
+            kind: "http",
+            method: "POST",
+            path: "/v1/api-keys",
+            purpose: "Confirm and document POST /v1/api-keys.",
+            callerIds: [],
+            calleeIds: [],
+            featureIds: [],
+            testStatus: "unknown",
+            evidenceIds: [],
+          },
+        },
+      ],
+      findingDecisions: [
+        {
+          id: "missing-in-status:POST:/v1/api-keys",
+          fingerprint: "missing_in_status:POST:/v1/api-keys",
+          decision: "accepted",
+          reason: "Real API surface",
+          status: "active",
+          updatedAt: "2026-04-29T00:00:00.000Z",
+        },
+      ],
+    };
+
+    expect(validateStatus(triagedStatus)).toEqual({ ok: true, errors: [] });
+  });
+
   it("reports exact field paths", () => {
     const invalid = {
       ...validStatus,
