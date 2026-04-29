@@ -1,6 +1,20 @@
 import { readdir, readFile, stat } from "node:fs/promises";
 import { join, relative } from "node:path";
 
+const ignoredDirectoryNames = new Set([
+  ".codex-architecture",
+  ".git",
+  ".next",
+  ".pnpm-store",
+  ".turbo",
+  ".worktrees",
+  "build",
+  "coverage",
+  "dist",
+  "node_modules",
+  "test-results",
+]);
+
 export async function listFiles(root: string): Promise<string[]> {
   const results: string[] = [];
   await walk(root, root, results);
@@ -31,7 +45,7 @@ export function classifySources(files: string[]): string[] {
 async function walk(root: string, current: string, results: string[]): Promise<void> {
   const entries = await readdir(current, { withFileTypes: true });
   for (const entry of entries) {
-    if (entry.name === "node_modules" || entry.name === ".git" || entry.name === "dist") {
+    if (entry.isDirectory() && ignoredDirectoryNames.has(entry.name)) {
       continue;
     }
     const absolute = join(current, entry.name);
