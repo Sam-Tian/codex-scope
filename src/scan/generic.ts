@@ -25,7 +25,7 @@ export function classifyTests(files: string[]): string[] {
 }
 
 export function classifySources(files: string[]): string[] {
-  return files.filter((file) => /\.(ts|tsx|js|jsx|go|py)$/i.test(file) && !classifyTests([file]).length);
+  return files.filter((file) => /\.(ts|tsx|js|jsx|mjs|cjs|go|py)$/i.test(file) && !classifyTests([file]).length);
 }
 
 async function walk(root: string, current: string, results: string[]): Promise<void> {

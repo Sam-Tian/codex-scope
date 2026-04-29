@@ -1,3 +1,5 @@
+import type { SourceEvidence } from "../state/types.js";
+
 export type ScanResult = {
   root: string;
   packageName?: string;
@@ -6,6 +8,7 @@ export type ScanResult = {
   sourceFiles: string[];
   interfaces: ScannedInterface[];
   calls: ScannedCall[];
+  evidence: SourceEvidence[];
   errors: ScanError[];
 };
 
@@ -15,6 +18,7 @@ export type ScannedInterface = {
   path: string;
   sourcePath: string;
   confidence: "high" | "medium" | "low";
+  evidence?: SourceEvidence[];
 };
 
 export type ScannedCall = {
@@ -23,6 +27,7 @@ export type ScannedCall = {
   path: string;
   sourcePath: string;
   confidence: "high" | "medium" | "low";
+  evidence?: SourceEvidence[];
 };
 
 export type ScanError = {

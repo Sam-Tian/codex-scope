@@ -3,6 +3,8 @@ export type TestStatus = "none" | "partial" | "passing" | "failing" | "unknown";
 export type ModuleKind = "frontend" | "backend" | "worker" | "database" | "external" | "tooling" | "unknown";
 export type EvidenceKind = "code" | "test" | "doc" | "commit" | "scan" | "manual";
 export type FindingSeverity = "info" | "warning" | "error";
+export type SourceEvidenceKind = "route" | "openapi" | "script_call" | "doc";
+export type SourceEvidenceConfidence = "high" | "medium" | "low";
 
 export type ArchitectureStatus = {
   schemaVersion: 1;
@@ -61,6 +63,7 @@ export type InterfaceStatus = {
   featureIds: string[];
   testStatus: TestStatus;
   evidenceIds: string[];
+  sourceEvidence?: SourceEvidence[];
 };
 
 export type FlowStatus = {
@@ -91,10 +94,25 @@ export type EvidenceRef = {
 export type ScanFinding = {
   id: string;
   severity: FindingSeverity;
-  kind: "missing_in_status" | "missing_in_code" | "test_mismatch" | "progress_mismatch" | "scan_error";
+  kind:
+    | "missing_in_status"
+    | "missing_call_in_status"
+    | "missing_in_code"
+    | "test_mismatch"
+    | "progress_mismatch"
+    | "scan_error";
   title: string;
   detail: string;
   affectedIds: string[];
   proposedAction: string;
   evidenceIds: string[];
+  sourceEvidence?: SourceEvidence[];
+};
+
+export type SourceEvidence = {
+  kind: SourceEvidenceKind;
+  method?: string;
+  path: string;
+  sourcePath: string;
+  confidence: SourceEvidenceConfidence;
 };

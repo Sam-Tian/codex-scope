@@ -6,6 +6,7 @@ import type {
   ModuleStatus,
   RiskStatus,
   ScanFinding,
+  SourceEvidence,
   WorkStatus,
 } from "../state/types.js";
 import { embedJson, escapeHtml } from "./html.js";
@@ -146,6 +147,7 @@ function renderFlowRow(flow: FlowStatus): string {
 function renderInterfaceRow(item: InterfaceStatus): string {
   return `<button class="list-row" type="button" data-interface-id="${escapeHtml(item.id)}">
     <strong>${escapeHtml(interfaceLabel(item))}</strong>
+    ${renderSourceBadges(item.sourceEvidence)}
     <span>${escapeHtml(item.testStatus)} test status</span>
   </button>`;
 }
@@ -153,6 +155,7 @@ function renderInterfaceRow(item: InterfaceStatus): string {
 function renderFindingRow(finding: ScanFinding): string {
   return `<button class="list-row ${severityToClass(finding.severity)}" type="button" data-finding-id="${escapeHtml(finding.id)}">
     <strong>${escapeHtml(finding.title)}</strong>
+    ${renderSourceBadges(finding.sourceEvidence)}
     <span>${escapeHtml(finding.kind)}</span>
   </button>`;
 }
@@ -166,6 +169,27 @@ function renderRiskRow(risk: RiskStatus): string {
 
 function emptyState(message: string): string {
   return `<p class="empty">${escapeHtml(message)}</p>`;
+}
+
+function renderSourceBadges(evidence: SourceEvidence[] | undefined): string {
+  const kinds = Array.from(new Set((evidence ?? []).map((item) => item.kind)));
+  if (kinds.length === 0) {
+    return "";
+  }
+  return `<span class="badges">${kinds.map((kind) => `<i class="badge">${escapeHtml(sourceKindLabel(kind))}</i>`).join("")}</span>`;
+}
+
+function sourceKindLabel(kind: SourceEvidence["kind"]): string {
+  if (kind === "openapi") {
+    return "OpenAPI";
+  }
+  if (kind === "script_call") {
+    return "Smoke";
+  }
+  if (kind === "doc") {
+    return "Docs";
+  }
+  return "Route";
 }
 
 function interfaceLabel(item: InterfaceStatus): string {
@@ -230,6 +254,8 @@ h3{font-size:15px}
 .node strong,.list-row strong{display:block;font-size:14px;line-height:1.3}
 .node span,.list-row span{display:block;color:var(--muted);font-size:12px;margin-top:6px;line-height:1.35}
 .node,.list-row,.details{min-width:0;overflow-wrap:anywhere}
+.badges{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.badge{display:inline-block;border:1px solid var(--line);border-radius:999px;background:#fff;padding:2px 7px;color:var(--blue);font-size:11px;font-style:normal;font-weight:800}
 .split{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 .stack{display:grid;gap:8px}
 .complete{border-color:var(--green);background:var(--green-bg)}
@@ -255,6 +281,8 @@ function clientScript(): string {
   const details = document.getElementById("details");
   const esc = (value) => String(value ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#39;");
   const list = (values) => values && values.length ? "<ul>" + values.map((value) => "<li>" + esc(value) + "</li>").join("") + "</ul>" : "<p class=\\"empty\\">None recorded.</p>";
+  const sourceLabel = (kind) => kind === "openapi" ? "OpenAPI" : kind === "script_call" ? "Smoke" : kind === "doc" ? "Docs" : "Route";
+  const sourceEvidence = (items) => items && items.length ? "<ul>" + items.map((item) => "<li><strong>" + esc(sourceLabel(item.kind)) + "</strong> " + esc((item.method || "ANY") + " " + item.path) + " - " + esc(item.sourcePath) + " (" + esc(item.confidence) + ")</li>").join("") + "</ul>" : "<p class=\\"empty\\">None recorded.</p>";
   const setDetails = (title, body) => { details.innerHTML = "<p class=\\"eyebrow\\">Details</p><h2>" + esc(title) + "</h2>" + body; };
   const findById = (items, id) => items.find((item) => item.id === id);
 
@@ -287,7 +315,7 @@ function clientScript(): string {
       const item = findById(status.interfaces, button.dataset.interfaceId);
       if (!item) return setDetails("Missing interface", "<p>Interface not found.</p>");
       const label = (item.method || item.kind.toUpperCase()) + " " + (item.path || item.name);
-      setDetails(label, "<p>" + esc(item.purpose) + "</p><dl><dt>Test</dt><dd>" + esc(item.testStatus) + "</dd><dt>Kind</dt><dd>" + esc(item.kind) + "</dd></dl><h3>Callers</h3>" + list(item.callerIds) + "<h3>Callees</h3>" + list(item.calleeIds) + "<h3>Evidence</h3>" + list(item.evidenceIds));
+      setDetails(label, "<p>" + esc(item.purpose) + "</p><dl><dt>Test</dt><dd>" + esc(item.testStatus) + "</dd><dt>Kind</dt><dd>" + esc(item.kind) + "</dd></dl><h3>Callers</h3>" + list(item.callerIds) + "<h3>Callees</h3>" + list(item.calleeIds) + "<h3>Evidence</h3>" + list(item.evidenceIds) + "<h3>Source Evidence</h3>" + sourceEvidence(item.sourceEvidence));
     });
   });
 
@@ -295,7 +323,7 @@ function clientScript(): string {
     button.addEventListener("click", () => {
       const finding = findById(status.scanFindings, button.dataset.findingId);
       if (!finding) return setDetails("Missing finding", "<p>Finding not found.</p>");
-      setDetails(finding.title, "<p>" + esc(finding.detail) + "</p><dl><dt>Severity</dt><dd>" + esc(finding.severity) + "</dd><dt>Kind</dt><dd>" + esc(finding.kind) + "</dd></dl><h3>Proposal</h3><p>" + esc(finding.proposedAction) + "</p><h3>Affected</h3>" + list(finding.affectedIds));
+      setDetails(finding.title, "<p>" + esc(finding.detail) + "</p><dl><dt>Severity</dt><dd>" + esc(finding.severity) + "</dd><dt>Kind</dt><dd>" + esc(finding.kind) + "</dd></dl><h3>Proposal</h3><p>" + esc(finding.proposedAction) + "</p><h3>Affected</h3>" + list(finding.affectedIds) + "<h3>Source Evidence</h3>" + sourceEvidence(finding.sourceEvidence));
     });
   });
 

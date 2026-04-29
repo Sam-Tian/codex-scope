@@ -1,0 +1,11 @@
+openapi: 3.1.0
+info:
+  title: AIGP redacted fixture
+  version: 0.1.0
+paths:
+  /api/ops-overview/report-archives:
+    get:
+      summary: List report archives
+  /api/control-plane-users:
+    post:
+      summary: Create control-plane user

@@ -18,11 +18,14 @@ const findingSeverities = new Set(["info", "warning", "error"]);
 const riskStatuses = new Set(["open", "mitigated", "accepted"]);
 const scanFindingKinds = new Set([
   "missing_in_status",
+  "missing_call_in_status",
   "missing_in_code",
   "test_mismatch",
   "progress_mismatch",
   "scan_error",
 ]);
+const sourceEvidenceKinds = new Set(["route", "openapi", "script_call", "doc"]);
+const sourceEvidenceConfidence = new Set(["high", "medium", "low"]);
 
 export function validateStatus(value: unknown): ValidationResult {
   const errors: ValidationError[] = [];
@@ -79,6 +82,7 @@ export function validateStatus(value: unknown): ValidationResult {
     requireStringArray(iface.featureIds, `${path}.featureIds`, errors);
     requireEnum(iface.testStatus, testStatuses, `${path}.testStatus`, errors);
     requireStringArray(iface.evidenceIds, `${path}.evidenceIds`, errors);
+    validateOptionalSourceEvidence(iface.sourceEvidence, `${path}.sourceEvidence`, errors);
   });
 
   validateArray(status.flows, "flows", errors, (flow, path) => {
@@ -115,6 +119,7 @@ export function validateStatus(value: unknown): ValidationResult {
     requireStringArray(finding.affectedIds, `${path}.affectedIds`, errors);
     requireString(finding.proposedAction, `${path}.proposedAction`, errors);
     requireStringArray(finding.evidenceIds, `${path}.evidenceIds`, errors);
+    validateOptionalSourceEvidence(finding.sourceEvidence, `${path}.sourceEvidence`, errors);
   });
 
   return errors.length === 0 ? { ok: true, errors: [] } : { ok: false, errors };
@@ -141,6 +146,19 @@ function validateArray(
       return;
     }
     validateItem(item, `${path}[${index}]`);
+  });
+}
+
+function validateOptionalSourceEvidence(value: unknown, path: string, errors: ValidationError[]): void {
+  if (value === undefined) {
+    return;
+  }
+  validateArray(value, path, errors, (evidence, itemPath) => {
+    requireEnum(evidence.kind, sourceEvidenceKinds, `${itemPath}.kind`, errors);
+    requireOptionalString(evidence.method, `${itemPath}.method`, errors);
+    requireString(evidence.path, `${itemPath}.path`, errors);
+    requireString(evidence.sourcePath, `${itemPath}.sourcePath`, errors);
+    requireEnum(evidence.confidence, sourceEvidenceConfidence, `${itemPath}.confidence`, errors);
   });
 }
 

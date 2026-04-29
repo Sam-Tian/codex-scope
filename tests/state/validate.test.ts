@@ -222,7 +222,7 @@ describe("validateStatus", () => {
       },
       path: "scanFindings[0].kind",
       message:
-        "Expected one of: missing_in_status, missing_in_code, test_mismatch, progress_mismatch, scan_error",
+        "Expected one of: missing_in_status, missing_call_in_status, missing_in_code, test_mismatch, progress_mismatch, scan_error",
     },
   ])("rejects invalid $name", ({ value, path, message }) => {
     expect(validateStatus(value)).toEqual({

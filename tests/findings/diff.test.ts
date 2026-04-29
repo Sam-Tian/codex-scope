@@ -46,6 +46,7 @@ const scan: ScanResult = {
     { id: "POST:/v1/new", method: "POST", path: "/v1/new", sourcePath: "src/routes.ts", confidence: "medium" },
   ],
   calls: [],
+  evidence: [],
   errors: [],
 };
 
@@ -131,5 +132,126 @@ describe("createScanFindings", () => {
         detail: "permission denied",
       }),
     ]);
+  });
+
+  it("uses route, OpenAPI, and smoke evidence to avoid false missing-in-code findings", () => {
+    const aigpStatus: ArchitectureStatus = {
+      ...status,
+      interfaces: [
+        {
+          ...status.interfaces[0],
+          id: "POST:/v1/chat/completions",
+          name: "Chat completions",
+          method: "POST",
+          path: "/v1/chat/completions",
+        },
+        {
+          ...status.interfaces[0],
+          id: "GET:/ops/overview",
+          name: "Ops overview",
+          method: "GET",
+          path: "/ops/overview",
+        },
+        {
+          ...status.interfaces[0],
+          id: "GET:/api/ops-overview/report-archives",
+          name: "Report archives",
+          method: "GET",
+          path: "/api/ops-overview/report-archives",
+        },
+      ],
+    };
+    const aigpScan: ScanResult = {
+      ...scan,
+      interfaces: [
+        {
+          id: "POST:/v1/chat/completions",
+          method: "POST",
+          path: "/v1/chat/completions",
+          sourcePath: "services/gateway-go/internal/http/handlers/router.go",
+          confidence: "high",
+          evidence: [
+            {
+              kind: "route",
+              method: "POST",
+              path: "/v1/chat/completions",
+              sourcePath: "services/gateway-go/internal/http/handlers/router.go",
+              confidence: "high",
+            },
+          ],
+        },
+        {
+          id: "GET:/api/ops-overview/report-archives",
+          method: "GET",
+          path: "/api/ops-overview/report-archives",
+          sourcePath: "openapi.yaml",
+          confidence: "high",
+          evidence: [
+            {
+              kind: "openapi",
+              method: "GET",
+              path: "/api/ops-overview/report-archives",
+              sourcePath: "openapi.yaml",
+              confidence: "high",
+            },
+          ],
+        },
+      ],
+      calls: [
+        {
+          id: "GET:/ops/overview:scripts/smoke-ops-overview-browser.mjs",
+          method: "GET",
+          path: "/ops/overview",
+          sourcePath: "scripts/smoke-ops-overview-browser.mjs",
+          confidence: "medium",
+          evidence: [
+            {
+              kind: "script_call",
+              method: "GET",
+              path: "/ops/overview",
+              sourcePath: "scripts/smoke-ops-overview-browser.mjs",
+              confidence: "medium",
+            },
+          ],
+        },
+      ],
+      evidence: [],
+    };
+
+    expect(createScanFindings(aigpStatus, aigpScan)).toEqual([]);
+  });
+
+  it("classifies smoke-only endpoints missing from status separately from routes", () => {
+    expect(
+      createScanFindings(status, {
+        ...scan,
+        interfaces: [],
+        calls: [
+          {
+            id: "POST:/v1/smoke-only:scripts/smoke.mjs",
+            method: "POST",
+            path: "/v1/smoke-only",
+            sourcePath: "scripts/smoke.mjs",
+            confidence: "medium",
+            evidence: [
+              {
+                kind: "script_call",
+                method: "POST",
+                path: "/v1/smoke-only",
+                sourcePath: "scripts/smoke.mjs",
+                confidence: "medium",
+              },
+            ],
+          },
+        ],
+      }),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: "missing_call_in_status",
+          title: "Script call is not recorded: POST /v1/smoke-only",
+        }),
+      ]),
+    );
   });
 });

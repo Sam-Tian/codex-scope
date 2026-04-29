@@ -50,6 +50,22 @@ const status: ArchitectureStatus = {
       featureIds: ["keys"],
       testStatus: "partial",
       evidenceIds: [],
+      sourceEvidence: [
+        {
+          kind: "route",
+          method: "POST",
+          path: "/v1/api-keys",
+          sourcePath: "src/routes.ts",
+          confidence: "medium",
+        },
+        {
+          kind: "openapi",
+          method: "POST",
+          path: "/v1/api-keys",
+          sourcePath: "openapi.yaml",
+          confidence: "high",
+        },
+      ],
     },
   ],
   flows: [
@@ -74,6 +90,15 @@ const status: ArchitectureStatus = {
       affectedIds: ["POST:/v1/new"],
       proposedAction: "Confirm whether POST /v1/new belongs in status.json.",
       evidenceIds: [],
+      sourceEvidence: [
+        {
+          kind: "script_call",
+          method: "POST",
+          path: "/v1/new",
+          sourcePath: "scripts/smoke.mjs",
+          confidence: "medium",
+        },
+      ],
     },
   ],
 };
@@ -89,6 +114,9 @@ describe("renderReportHtml", () => {
     expect(html).toContain("Demo");
     expect(html).toContain("API keys");
     expect(html).toContain("POST /v1/api-keys");
+    expect(html).toContain("Route");
+    expect(html).toContain("OpenAPI");
+    expect(html).toContain("Smoke");
     expect(html).toContain("API key creation");
     expect(html).toContain("Scanned interface is not recorded");
     expect(html).toContain("codex-scope refresh");
@@ -114,11 +142,14 @@ describe("renderReportHtml", () => {
     expect(dom.details.innerHTML).toContain("Create key");
     expect(dom.details.innerHTML).toContain("Callers");
     expect(dom.details.innerHTML).toContain("Callees");
+    expect(dom.details.innerHTML).toContain("Source Evidence");
+    expect(dom.details.innerHTML).toContain("src/routes.ts");
 
     await dom.findingButtons[0]?.click();
     expect(dom.details.innerHTML).toContain("Scanned interface is not recorded");
     expect(dom.details.innerHTML).toContain("Proposal");
     expect(dom.details.innerHTML).toContain("Confirm whether POST /v1/new belongs in status.json.");
+    expect(dom.details.innerHTML).toContain("scripts/smoke.mjs");
   });
 
   it("renders served refresh mode without the static command button behavior", () => {
