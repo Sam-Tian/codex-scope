@@ -27,7 +27,7 @@ export function renderReportHtml(status: ArchitectureStatus, options: RenderRepo
   const progressDegrees = Math.max(0, Math.min(100, options.progress.percent)) * 3.6;
   const staticRefresh = options.servedMode
     ? ""
-    : '<section id="static-refresh" class="command hidden">Run: codex-scope refresh</section>';
+    : '<section id="static-refresh" class="command hidden" data-i18n="staticRefresh">Run: codex-scope refresh</section>';
 
   return `<!doctype html>
 <html lang="en">
@@ -48,48 +48,51 @@ export function renderReportHtml(status: ArchitectureStatus, options: RenderRepo
       <div class="progress-ring" style="--progress-deg:${progressDegrees}deg" aria-label="Project progress ${options.progress.percent}%">
         <span>${options.progress.percent}%</span>
       </div>
-      <p>${escapeHtml(options.progress.basis)} progress across ${options.progress.featureCount} active features</p>
+      <p data-i18n="progressSummary" data-progress-basis="${escapeHtml(options.progress.basis)}" data-progress-count="${options.progress.featureCount}">${escapeHtml(options.progress.basis)} progress across ${options.progress.featureCount} active features</p>
     </section>
     <dl class="stats">
-      <dt>Features</dt><dd>${status.features.length}</dd>
-      <dt>Modules</dt><dd>${status.modules.length}</dd>
-      <dt>Interfaces</dt><dd>${status.interfaces.length}</dd>
-      <dt>Findings</dt><dd>${status.scanFindings.length}</dd>
+      <dt data-i18n="statsFeatures">Features</dt><dd>${status.features.length}</dd>
+      <dt data-i18n="statsModules">Modules</dt><dd>${status.modules.length}</dd>
+      <dt data-i18n="statsInterfaces">Interfaces</dt><dd>${status.interfaces.length}</dd>
+      <dt data-i18n="statsFindings">Findings</dt><dd>${status.scanFindings.length}</dd>
     </dl>
     <div class="legend" aria-label="Status legend">
-      <span><i class="dot complete"></i>complete or stable</span>
-      <span><i class="dot in-progress"></i>in progress or needs verification</span>
-      <span><i class="dot blocked"></i>blocked or conflicting</span>
-      <span><i class="dot unknown"></i>unknown or not started</span>
+      <span><i class="dot complete"></i><b data-i18n="legendComplete">complete or stable</b></span>
+      <span><i class="dot in-progress"></i><b data-i18n="legendProgress">in progress or needs verification</b></span>
+      <span><i class="dot blocked"></i><b data-i18n="legendBlocked">blocked or conflicting</b></span>
+      <span><i class="dot unknown"></i><b data-i18n="legendUnknown">unknown or not started</b></span>
     </div>
   </aside>
   <main class="workspace">
     <header class="topbar">
       <div>
-        <p class="eyebrow">Architecture Topology</p>
-        <h2>Project Supervision View</h2>
+        <p class="eyebrow" data-i18n="topology">Architecture Topology</p>
+        <h2 data-i18n="topTitle">Project Supervision View</h2>
       </div>
-      <button class="refresh" type="button" data-refresh-mode="${refreshMode}">Refresh</button>
+      <div class="top-actions">
+        <button class="language-toggle" type="button" data-language-toggle aria-label="Switch language to Chinese">中文</button>
+        <button class="refresh" type="button" data-refresh-mode="${refreshMode}" data-i18n="refreshButton">Refresh</button>
+      </div>
     </header>
     <section class="section">
       <div class="section-title">
-        <h3>Modules</h3>
-        <span>${status.modules.length} nodes</span>
+        <h3 data-i18n="modulesHeading">Modules</h3>
+        <span data-i18n="modulesCount" data-count="${status.modules.length}">${status.modules.length} nodes</span>
       </div>
       <div class="nodes">${nodeCards || emptyState("No modules recorded yet.")}</div>
     </section>
     <section class="section split">
       <div>
         <div class="section-title">
-          <h3>Features</h3>
-          <span>progress line</span>
+          <h3 data-i18n="featuresHeading">Features</h3>
+          <span data-i18n="featuresSubtitle">progress line</span>
         </div>
         <div class="stack">${featureCards || emptyState("No features recorded yet.")}</div>
       </div>
       <div>
         <div class="section-title">
-          <h3>Traffic Flow</h3>
-          <span>${status.flows.length} paths</span>
+          <h3 data-i18n="flowsHeading">Traffic Flow</h3>
+          <span data-i18n="flowsCount" data-count="${status.flows.length}">${status.flows.length} paths</span>
         </div>
         <div class="stack">${flowRows || emptyState("No traffic flows recorded yet.")}</div>
       </div>
@@ -97,15 +100,15 @@ export function renderReportHtml(status: ArchitectureStatus, options: RenderRepo
     <section class="section split">
       <div>
         <div class="section-title">
-          <h3>Interfaces</h3>
-          <span>call surfaces</span>
+          <h3 data-i18n="interfacesHeading">Interfaces</h3>
+          <span data-i18n="interfacesSubtitle">call surfaces</span>
         </div>
         <div class="stack">${interfaceRows || emptyState("No interfaces recorded yet.")}</div>
       </div>
       <div>
         <div class="section-title">
-          <h3>Risks And Findings</h3>
-          <span>${status.risks.length + status.scanFindings.length} items</span>
+          <h3 data-i18n="risksHeading">Risks And Findings</h3>
+          <span data-i18n="risksCount" data-count="${status.risks.length + status.scanFindings.length}">${status.risks.length + status.scanFindings.length} items</span>
         </div>
         <div class="stack">${findingRows}${riskRows || (findingRows ? "" : emptyState("No risks or scan findings."))}</div>
       </div>
@@ -113,9 +116,9 @@ export function renderReportHtml(status: ArchitectureStatus, options: RenderRepo
     ${staticRefresh}
   </main>
   <aside class="details" id="details">
-    <p class="eyebrow">Details</p>
-    <h2>Project</h2>
-    <p>Select a module, feature, interface, flow, risk, or finding to inspect purpose, progress, callers, evidence, and proposed action.</p>
+    <p class="eyebrow" data-i18n="details">Details</p>
+    <h2 data-i18n="projectHeading">Project</h2>
+    <p data-i18n="detailsIntro">Select a module, feature, interface, flow, risk, or finding to inspect purpose, progress, callers, evidence, and proposed action.</p>
   </aside>
   <script>window.__ARCHITECTURE_STATUS__ = ${embedJson(status)};</script>
   <script>${clientScript()}</script>
@@ -176,7 +179,9 @@ function renderSourceBadges(evidence: SourceEvidence[] | undefined): string {
   if (kinds.length === 0) {
     return "";
   }
-  return `<span class="badges">${kinds.map((kind) => `<i class="badge">${escapeHtml(sourceKindLabel(kind))}</i>`).join("")}</span>`;
+  return `<span class="badges">${kinds
+    .map((kind) => `<i class="badge" data-source-kind="${escapeHtml(kind)}">${escapeHtml(sourceKindLabel(kind))}</i>`)
+    .join("")}</span>`;
 }
 
 function sourceKindLabel(kind: SourceEvidence["kind"]): string {
@@ -243,9 +248,12 @@ h3{font-size:15px}
 .stats dt{color:var(--muted)}
 .stats dd{margin:0;font-weight:800}
 .legend{display:grid;gap:8px;color:var(--muted);font-size:13px}
+.legend b{font-weight:400}
 .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px;vertical-align:middle;border:1px solid currentColor}
 .topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px}
-.refresh{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:9px 12px;cursor:pointer;min-width:84px;text-align:center}
+.top-actions{display:flex;align-items:center;gap:8px}
+.refresh,.language-toggle{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:9px 12px;cursor:pointer;min-width:84px;text-align:center}
+.language-toggle{min-width:72px;color:var(--blue);font-weight:800}
 .section{background:transparent;margin-bottom:18px}
 .section-title{display:flex;align-items:center;justify-content:space-between;color:var(--muted);margin-bottom:10px}
 .section-title span{font-size:12px}
@@ -270,7 +278,7 @@ h3{font-size:15px}
 .details dt{color:var(--muted)}
 .details dd{margin:0}
 .details ul{margin:8px 0 0;padding-left:20px;color:var(--muted)}
-@media (max-width:980px){body{display:block}.sidebar,.details{border:0;border-bottom:1px solid var(--line)}.split{grid-template-columns:1fr}.topbar{align-items:flex-start;flex-direction:column}.refresh{width:100%}}
+@media (max-width:980px){body{display:block}.sidebar,.details{border:0;border-bottom:1px solid var(--line)}.split{grid-template-columns:1fr}.topbar{align-items:flex-start;flex-direction:column}.top-actions{width:100%}.refresh,.language-toggle{flex:1}}
 `;
 }
 
@@ -279,60 +287,218 @@ function clientScript(): string {
 (function(){
   const status = window.__ARCHITECTURE_STATUS__;
   const details = document.getElementById("details");
+  const languageButton = document.querySelector("[data-language-toggle]");
+  let currentLanguage = "en";
+  const messages = {
+    en: {
+      topology: "Architecture Topology",
+      topTitle: "Project Supervision View",
+      refreshButton: "Refresh",
+      statsFeatures: "Features",
+      statsModules: "Modules",
+      statsInterfaces: "Interfaces",
+      statsFindings: "Findings",
+      legendComplete: "complete or stable",
+      legendProgress: "in progress or needs verification",
+      legendBlocked: "blocked or conflicting",
+      legendUnknown: "unknown or not started",
+      modulesHeading: "Modules",
+      featuresHeading: "Features",
+      featuresSubtitle: "progress line",
+      flowsHeading: "Traffic Flow",
+      interfacesHeading: "Interfaces",
+      interfacesSubtitle: "call surfaces",
+      risksHeading: "Risks And Findings",
+      details: "Details",
+      projectHeading: "Project",
+      detailsIntro: "Select a module, feature, interface, flow, risk, or finding to inspect purpose, progress, callers, evidence, and proposed action.",
+      staticRefresh: "Run: codex-scope refresh",
+      none: "None recorded.",
+      missingModule: "Missing module",
+      missingFeature: "Missing feature",
+      missingFlow: "Missing flow",
+      missingInterface: "Missing interface",
+      missingFinding: "Missing finding",
+      missingRisk: "Missing risk",
+      nodeNotFound: "Node not found.",
+      featureNotFound: "Feature not found.",
+      flowNotFound: "Flow not found.",
+      interfaceNotFound: "Interface not found.",
+      findingNotFound: "Finding not found.",
+      riskNotFound: "Risk not found.",
+      kind: "Kind",
+      status: "Status",
+      progress: "Progress",
+      dependsOn: "Depends On",
+      evidence: "Evidence",
+      acceptance: "Acceptance",
+      interfaces: "Interfaces",
+      entry: "Entry",
+      steps: "Steps",
+      test: "Test",
+      callers: "Callers",
+      callees: "Callees",
+      sourceEvidence: "Source Evidence",
+      severity: "Severity",
+      proposal: "Proposal",
+      affected: "Affected",
+      route: "Route",
+      openapi: "OpenAPI",
+      script_call: "Smoke",
+      doc: "Docs",
+    },
+    zh: {
+      topology: "架构拓扑",
+      topTitle: "项目监督视图",
+      refreshButton: "刷新",
+      statsFeatures: "功能",
+      statsModules: "模块",
+      statsInterfaces: "接口",
+      statsFindings: "发现项",
+      legendComplete: "已完成或稳定",
+      legendProgress: "进行中或需要验证",
+      legendBlocked: "阻塞或冲突",
+      legendUnknown: "未知或未开始",
+      modulesHeading: "模块",
+      featuresHeading: "功能",
+      featuresSubtitle: "进度线",
+      flowsHeading: "流量路径",
+      interfacesHeading: "接口",
+      interfacesSubtitle: "调用面",
+      risksHeading: "风险与扫描发现",
+      details: "详情",
+      projectHeading: "项目",
+      detailsIntro: "选择模块、功能、接口、流程、风险或发现项，查看目的、进度、调用方、证据和建议动作。",
+      staticRefresh: "运行：codex-scope refresh",
+      none: "暂无记录。",
+      missingModule: "缺少模块",
+      missingFeature: "缺少功能",
+      missingFlow: "缺少流程",
+      missingInterface: "缺少接口",
+      missingFinding: "缺少发现项",
+      missingRisk: "缺少风险",
+      nodeNotFound: "没有找到模块。",
+      featureNotFound: "没有找到功能。",
+      flowNotFound: "没有找到流程。",
+      interfaceNotFound: "没有找到接口。",
+      findingNotFound: "没有找到发现项。",
+      riskNotFound: "没有找到风险。",
+      kind: "类型",
+      status: "状态",
+      progress: "进度",
+      dependsOn: "依赖",
+      evidence: "证据",
+      acceptance: "验收项",
+      interfaces: "接口",
+      entry: "入口",
+      steps: "步骤",
+      test: "测试",
+      callers: "调用方",
+      callees: "被调用方",
+      sourceEvidence: "源代码证据",
+      severity: "严重性",
+      proposal: "建议",
+      affected: "影响范围",
+      route: "路由",
+      openapi: "OpenAPI",
+      script_call: "冒烟脚本",
+      doc: "文档",
+    },
+  };
+  const t = (key) => messages[currentLanguage][key] || messages.en[key] || key;
+  const dynamicText = (element) => {
+    const key = element.dataset.i18n;
+    const count = Number(element.dataset.count || 0);
+    if (key === "progressSummary") {
+      const basis = element.dataset.progressBasis || "";
+      const featureCount = Number(element.dataset.progressCount || 0);
+      return currentLanguage === "zh"
+        ? "基于 " + basis + " 统计，覆盖 " + featureCount + " 个活跃功能"
+        : basis + " progress across " + featureCount + " active features";
+    }
+    if (key === "modulesCount") {
+      return currentLanguage === "zh" ? count + " 个节点" : count + " nodes";
+    }
+    if (key === "flowsCount") {
+      return currentLanguage === "zh" ? count + " 条路径" : count + " paths";
+    }
+    if (key === "risksCount") {
+      return currentLanguage === "zh" ? count + " 项" : count + " items";
+    }
+    return t(key);
+  };
+  const sourceLabel = (kind) => t(kind === "openapi" ? "openapi" : kind === "script_call" ? "script_call" : kind === "doc" ? "doc" : "route");
+  const applyLanguage = (language) => {
+    currentLanguage = language;
+    if (document.documentElement) {
+      document.documentElement.setAttribute("lang", language === "zh" ? "zh-CN" : "en");
+    }
+    languageButton.textContent = language === "zh" ? "English" : "中文";
+    languageButton.setAttribute("aria-label", language === "zh" ? "Switch language to English" : "切换到中文");
+    document.querySelectorAll("[data-i18n]").forEach((element) => {
+      element.textContent = dynamicText(element);
+    });
+    document.querySelectorAll("[data-source-kind]").forEach((element) => {
+      element.textContent = sourceLabel(element.dataset.sourceKind);
+    });
+  };
   const esc = (value) => String(value ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#39;");
-  const list = (values) => values && values.length ? "<ul>" + values.map((value) => "<li>" + esc(value) + "</li>").join("") + "</ul>" : "<p class=\\"empty\\">None recorded.</p>";
-  const sourceLabel = (kind) => kind === "openapi" ? "OpenAPI" : kind === "script_call" ? "Smoke" : kind === "doc" ? "Docs" : "Route";
-  const sourceEvidence = (items) => items && items.length ? "<ul>" + items.map((item) => "<li><strong>" + esc(sourceLabel(item.kind)) + "</strong> " + esc((item.method || "ANY") + " " + item.path) + " - " + esc(item.sourcePath) + " (" + esc(item.confidence) + ")</li>").join("") + "</ul>" : "<p class=\\"empty\\">None recorded.</p>";
-  const setDetails = (title, body) => { details.innerHTML = "<p class=\\"eyebrow\\">Details</p><h2>" + esc(title) + "</h2>" + body; };
+  const list = (values) => values && values.length ? "<ul>" + values.map((value) => "<li>" + esc(value) + "</li>").join("") + "</ul>" : "<p class=\\"empty\\">" + esc(t("none")) + "</p>";
+  const sourceEvidence = (items) => items && items.length ? "<ul>" + items.map((item) => "<li><strong>" + esc(sourceLabel(item.kind)) + "</strong> " + esc((item.method || "ANY") + " " + item.path) + " - " + esc(item.sourcePath) + " (" + esc(item.confidence) + ")</li>").join("") + "</ul>" : "<p class=\\"empty\\">" + esc(t("none")) + "</p>";
+  const setDetails = (title, body) => { details.innerHTML = "<p class=\\"eyebrow\\">" + esc(t("details")) + "</p><h2>" + esc(title) + "</h2>" + body; };
   const findById = (items, id) => items.find((item) => item.id === id);
 
   document.querySelectorAll("[data-node-id]").forEach((button) => {
     button.addEventListener("click", () => {
       const node = findById(status.modules, button.dataset.nodeId);
-      if (!node) return setDetails("Missing module", "<p>Node not found.</p>");
-      setDetails(node.name, "<dl><dt>Kind</dt><dd>" + esc(node.kind) + "</dd><dt>Status</dt><dd>" + esc(node.status) + "</dd><dt>Progress</dt><dd>" + esc(node.percent) + "%</dd></dl><h3>Depends On</h3>" + list(node.dependsOn) + "<h3>Evidence</h3>" + list(node.evidenceIds));
+      if (!node) return setDetails(t("missingModule"), "<p>" + esc(t("nodeNotFound")) + "</p>");
+      setDetails(node.name, "<dl><dt>" + esc(t("kind")) + "</dt><dd>" + esc(node.kind) + "</dd><dt>" + esc(t("status")) + "</dt><dd>" + esc(node.status) + "</dd><dt>" + esc(t("progress")) + "</dt><dd>" + esc(node.percent) + "%</dd></dl><h3>" + esc(t("dependsOn")) + "</h3>" + list(node.dependsOn) + "<h3>" + esc(t("evidence")) + "</h3>" + list(node.evidenceIds));
     });
   });
 
   document.querySelectorAll("[data-feature-id]").forEach((button) => {
     button.addEventListener("click", () => {
       const feature = findById(status.features, button.dataset.featureId);
-      if (!feature) return setDetails("Missing feature", "<p>Feature not found.</p>");
-      setDetails(feature.name, "<p>" + esc(feature.purpose) + "</p><dl><dt>Status</dt><dd>" + esc(feature.status) + "</dd><dt>Progress</dt><dd>" + esc(feature.percent) + "%</dd></dl><h3>Acceptance</h3>" + list(feature.acceptance) + "<h3>Interfaces</h3>" + list(feature.interfaceIds));
+      if (!feature) return setDetails(t("missingFeature"), "<p>" + esc(t("featureNotFound")) + "</p>");
+      setDetails(feature.name, "<p>" + esc(feature.purpose) + "</p><dl><dt>" + esc(t("status")) + "</dt><dd>" + esc(feature.status) + "</dd><dt>" + esc(t("progress")) + "</dt><dd>" + esc(feature.percent) + "%</dd></dl><h3>" + esc(t("acceptance")) + "</h3>" + list(feature.acceptance) + "<h3>" + esc(t("interfaces")) + "</h3>" + list(feature.interfaceIds));
     });
   });
 
   document.querySelectorAll("[data-flow-id]").forEach((button) => {
     button.addEventListener("click", () => {
       const flow = findById(status.flows, button.dataset.flowId);
-      if (!flow) return setDetails("Missing flow", "<p>Flow not found.</p>");
-      setDetails(flow.name, "<dl><dt>Entry</dt><dd>" + esc(flow.entry) + "</dd><dt>Status</dt><dd>" + esc(flow.status) + "</dd></dl><h3>Steps</h3>" + list(flow.steps) + "<h3>Interfaces</h3>" + list(flow.interfaceIds));
+      if (!flow) return setDetails(t("missingFlow"), "<p>" + esc(t("flowNotFound")) + "</p>");
+      setDetails(flow.name, "<dl><dt>" + esc(t("entry")) + "</dt><dd>" + esc(flow.entry) + "</dd><dt>" + esc(t("status")) + "</dt><dd>" + esc(flow.status) + "</dd></dl><h3>" + esc(t("steps")) + "</h3>" + list(flow.steps) + "<h3>" + esc(t("interfaces")) + "</h3>" + list(flow.interfaceIds));
     });
   });
 
   document.querySelectorAll("[data-interface-id]").forEach((button) => {
     button.addEventListener("click", () => {
       const item = findById(status.interfaces, button.dataset.interfaceId);
-      if (!item) return setDetails("Missing interface", "<p>Interface not found.</p>");
+      if (!item) return setDetails(t("missingInterface"), "<p>" + esc(t("interfaceNotFound")) + "</p>");
       const label = (item.method || item.kind.toUpperCase()) + " " + (item.path || item.name);
-      setDetails(label, "<p>" + esc(item.purpose) + "</p><dl><dt>Test</dt><dd>" + esc(item.testStatus) + "</dd><dt>Kind</dt><dd>" + esc(item.kind) + "</dd></dl><h3>Callers</h3>" + list(item.callerIds) + "<h3>Callees</h3>" + list(item.calleeIds) + "<h3>Evidence</h3>" + list(item.evidenceIds) + "<h3>Source Evidence</h3>" + sourceEvidence(item.sourceEvidence));
+      setDetails(label, "<p>" + esc(item.purpose) + "</p><dl><dt>" + esc(t("test")) + "</dt><dd>" + esc(item.testStatus) + "</dd><dt>" + esc(t("kind")) + "</dt><dd>" + esc(item.kind) + "</dd></dl><h3>" + esc(t("callers")) + "</h3>" + list(item.callerIds) + "<h3>" + esc(t("callees")) + "</h3>" + list(item.calleeIds) + "<h3>" + esc(t("evidence")) + "</h3>" + list(item.evidenceIds) + "<h3>" + esc(t("sourceEvidence")) + "</h3>" + sourceEvidence(item.sourceEvidence));
     });
   });
 
   document.querySelectorAll("[data-finding-id]").forEach((button) => {
     button.addEventListener("click", () => {
       const finding = findById(status.scanFindings, button.dataset.findingId);
-      if (!finding) return setDetails("Missing finding", "<p>Finding not found.</p>");
-      setDetails(finding.title, "<p>" + esc(finding.detail) + "</p><dl><dt>Severity</dt><dd>" + esc(finding.severity) + "</dd><dt>Kind</dt><dd>" + esc(finding.kind) + "</dd></dl><h3>Proposal</h3><p>" + esc(finding.proposedAction) + "</p><h3>Affected</h3>" + list(finding.affectedIds) + "<h3>Source Evidence</h3>" + sourceEvidence(finding.sourceEvidence));
+      if (!finding) return setDetails(t("missingFinding"), "<p>" + esc(t("findingNotFound")) + "</p>");
+      setDetails(finding.title, "<p>" + esc(finding.detail) + "</p><dl><dt>" + esc(t("severity")) + "</dt><dd>" + esc(finding.severity) + "</dd><dt>" + esc(t("kind")) + "</dt><dd>" + esc(finding.kind) + "</dd></dl><h3>" + esc(t("proposal")) + "</h3><p>" + esc(finding.proposedAction) + "</p><h3>" + esc(t("affected")) + "</h3>" + list(finding.affectedIds) + "<h3>" + esc(t("sourceEvidence")) + "</h3>" + sourceEvidence(finding.sourceEvidence));
     });
   });
 
   document.querySelectorAll("[data-risk-id]").forEach((button) => {
     button.addEventListener("click", () => {
       const risk = findById(status.risks, button.dataset.riskId);
-      if (!risk) return setDetails("Missing risk", "<p>Risk not found.</p>");
-      setDetails(risk.title, "<dl><dt>Severity</dt><dd>" + esc(risk.severity) + "</dd><dt>Status</dt><dd>" + esc(risk.status) + "</dd></dl><h3>Affected</h3>" + list(risk.affectedIds) + "<h3>Evidence</h3>" + list(risk.evidenceIds));
+      if (!risk) return setDetails(t("missingRisk"), "<p>" + esc(t("riskNotFound")) + "</p>");
+      setDetails(risk.title, "<dl><dt>" + esc(t("severity")) + "</dt><dd>" + esc(risk.severity) + "</dd><dt>" + esc(t("status")) + "</dt><dd>" + esc(risk.status) + "</dd></dl><h3>" + esc(t("affected")) + "</h3>" + list(risk.affectedIds) + "<h3>" + esc(t("evidence")) + "</h3>" + list(risk.evidenceIds));
     });
+  });
+
+  languageButton.addEventListener("click", () => {
+    applyLanguage(currentLanguage === "zh" ? "en" : "zh");
   });
 
   document.querySelector("[data-refresh-mode]").addEventListener("click", async (event) => {
@@ -344,6 +510,8 @@ function clientScript(): string {
     }
     document.getElementById("static-refresh").classList.remove("hidden");
   });
+
+  applyLanguage("en");
 })();
 `;
 }

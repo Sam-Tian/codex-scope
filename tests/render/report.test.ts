@@ -123,6 +123,18 @@ describe("renderReportHtml", () => {
     expect(html).toContain("data-node-id=\"api\"");
   });
 
+  it("renders a language toggle with Chinese UI copy available", () => {
+    const html = renderReportHtml(status, {
+      progress: { percent: 70, basis: "equal", featureCount: 1, weights: [] },
+      servedMode: false,
+    });
+
+    expect(html).toContain("data-language-toggle");
+    expect(html).toContain(">中文<");
+    expect(html).toContain("项目监督视图");
+    expect(html).toContain("源代码证据");
+  });
+
   it("updates the details panel when rendered items are clicked", async () => {
     const html = renderReportHtml(status, {
       progress: { percent: 70, basis: "equal", featureCount: 1, weights: [] },
@@ -152,6 +164,26 @@ describe("renderReportHtml", () => {
     expect(dom.details.innerHTML).toContain("scripts/smoke.mjs");
   });
 
+  it("toggles static UI and details labels to Chinese", async () => {
+    const html = renderReportHtml(status, {
+      progress: { percent: 70, basis: "equal", featureCount: 1, weights: [] },
+      servedMode: false,
+    });
+    const dom = createFakeDocumentFromRenderedHtml(html);
+
+    executeInlineScripts(html, dom.document);
+
+    await dom.languageButton.click();
+    expect(dom.languageButton.textContent).toBe("English");
+    expect(dom.documentElement.attributes.lang).toBe("zh-CN");
+    expect(dom.i18nElement("topTitle").textContent).toBe("项目监督视图");
+
+    await dom.interfaceButtons[0]?.click();
+    expect(dom.details.innerHTML).toContain("调用方");
+    expect(dom.details.innerHTML).toContain("被调用方");
+    expect(dom.details.innerHTML).toContain("源代码证据");
+  });
+
   it("renders served refresh mode without the static command button behavior", () => {
     const html = renderReportHtml(status, {
       progress: { percent: 70, basis: "equal", featureCount: 1, weights: [] },
@@ -160,7 +192,7 @@ describe("renderReportHtml", () => {
 
     expect(html).toContain("data-refresh-mode=\"served\"");
     expect(html).toContain("fetch(\"/refresh\"");
-    expect(html).not.toContain("Run: codex-scope refresh");
+    expect(html).not.toContain("id=\"static-refresh\"");
   });
 
   it("escapes HTML in rendered content and embedded JSON script", () => {
@@ -188,6 +220,8 @@ type ClickListener = (event: { currentTarget: FakeElement }) => void | Promise<v
 
 class FakeElement {
   innerHTML = "";
+  textContent = "";
+  readonly attributes: Record<string, string> = {};
   readonly classList = {
     remove: (name: string) => {
       this.removedClasses.push(name);
@@ -197,6 +231,10 @@ class FakeElement {
   private readonly listeners = new Map<string, ClickListener[]>();
 
   constructor(readonly dataset: Record<string, string> = {}) {}
+
+  setAttribute(name: string, value: string): void {
+    this.attributes[name] = value;
+  }
 
   addEventListener(event: string, listener: ClickListener): void {
     const listeners = this.listeners.get(event) ?? [];
@@ -214,17 +252,28 @@ class FakeElement {
 function createFakeDocumentFromRenderedHtml(html: string): {
   details: FakeElement;
   document: {
+    documentElement: FakeElement;
     getElementById: (id: string) => FakeElement;
     querySelector: (selector: string) => FakeElement;
     querySelectorAll: (selector: string) => FakeElement[];
   };
   findingButtons: FakeElement[];
   interfaceButtons: FakeElement[];
+  languageButton: FakeElement;
   nodeButtons: FakeElement[];
+  documentElement: FakeElement;
+  i18nElement: (key: string) => FakeElement;
 } {
   const details = new FakeElement();
+  const documentElement = new FakeElement();
   const staticRefresh = new FakeElement();
   const refreshButton = new FakeElement({ refreshMode: attributeValue(html, "data-refresh-mode") ?? "static" });
+  const languageButton = new FakeElement();
+  languageButton.textContent = "中文";
+  const i18nElements = attributeValues(html, "data-i18n").map((key) => new FakeElement({ i18n: key }));
+  const sourceKindElements = attributeValues(html, "data-source-kind").map(
+    (kind) => new FakeElement({ sourceKind: kind }),
+  );
   const nodeButtons = dataButtons(html, "data-node-id", "nodeId");
   const featureButtons = dataButtons(html, "data-feature-id", "featureId");
   const flowButtons = dataButtons(html, "data-flow-id", "flowId");
@@ -238,11 +287,14 @@ function createFakeDocumentFromRenderedHtml(html: string): {
     ["[data-interface-id]", interfaceButtons],
     ["[data-finding-id]", findingButtons],
     ["[data-risk-id]", riskButtons],
+    ["[data-i18n]", i18nElements],
+    ["[data-source-kind]", sourceKindElements],
   ]);
 
   return {
     details,
     document: {
+      documentElement,
       getElementById: (id: string) => {
         if (id === "details") {
           return details;
@@ -256,6 +308,9 @@ function createFakeDocumentFromRenderedHtml(html: string): {
         if (selector === "[data-refresh-mode]") {
           return refreshButton;
         }
+        if (selector === "[data-language-toggle]") {
+          return languageButton;
+        }
         const element = selectorMap.get(selector)?.[0];
         if (!element) {
           throw new Error(`Unexpected selector: ${selector}`);
@@ -266,7 +321,16 @@ function createFakeDocumentFromRenderedHtml(html: string): {
     },
     findingButtons,
     interfaceButtons,
+    languageButton,
     nodeButtons,
+    documentElement,
+    i18nElement: (key: string) => {
+      const element = i18nElements.find((item) => item.dataset.i18n === key);
+      if (!element) {
+        throw new Error(`Unexpected i18n key: ${key}`);
+      }
+      return element;
+    },
   };
 }
 
